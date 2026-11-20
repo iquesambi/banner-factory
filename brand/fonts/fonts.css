@@ -1,0 +1,20 @@
+@font-face {
+  font-family: "Elkjop A Int Headline";
+  src: url("./ElkjopAIntHeadline-Regular.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Elkjop A Int Bodytext";
+  src: url("./ElkjopAIntBodytext-Regular.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Elkjop A Int Bodytext";
+  src: url("./ElkjopAIntBodytext-DemiBold.otf") format("opentype");
+  font-weight: 600;
+  font-style: normal;
+}
