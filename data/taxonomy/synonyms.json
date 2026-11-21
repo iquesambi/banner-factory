@@ -1,0 +1,71 @@
+{
+  "source": "hand-curated",
+  "note": "Bridges the vocabulary gap between the feed (mixed Danish/English, marketing words) and the taxonomy (Danish slugs). Kept deliberately small: only categories that matter for a retargeting banner and that string matching cannot reach. ORDER MATTERS - the first entry whose terms match wins, so accessories come before the devices they are named after ('iPhone cover' is a cover, not a phone). All words are ASCII-folded the same way product names are (o for oe, a for ae/aa). Every path is validated against categories.json at load time.",
+  "entries": [
+    {
+      "path": "mobil-tablet-smartwatch/tablet-tilbehor/covers-etuier-til-tablet",
+      "why": "a tablet case names the tablet; must be decided before both covers and tablets",
+      "words": ["cover", "covers", "etui", "etuier"],
+      "suffixes": ["etui", "cover"],
+      "requireAny": ["ipad", "tablet", "tab"]
+    },
+    {
+      "path": "mobil-tablet-smartwatch/mobiltilbehor/mobilcovers",
+      "why": "feed says etui / cover / magsafe, taxonomy says mobilcovers",
+      "words": ["cover", "covers", "magsafe", "mobilcover", "mobilcovers", "flipcover"],
+      "suffixes": ["etui", "cover"]
+    },
+    {
+      "path": "mobil-tablet-smartwatch/mobiltelefon",
+      "why": "THE category for retargeting. Feed writes the English 'smartphone'; the taxonomy slug is the Danish 'mobiltelefon', so string matching never connects them",
+      "words": ["smartphone", "smartphones", "mobiltelefon", "iphone"],
+      "suffixes": ["smartphone", "mobiltelefon"],
+      "excludeAny": ["etui", "cover", "holder", "oplader", "kabel", "beskyttelsesglas", "skarmbeskyttelse", "powerbank", "taske"]
+    },
+    {
+      "path": "mobil-tablet-smartwatch/tablet",
+      "why": "feed names Apple tablets 'iPad' and never says tablet",
+      "words": ["ipad"],
+      "excludeAny": ["etui", "cover", "tastatur", "stylus", "pen", "holder", "stander", "skarmbeskyttelse", "kabel", "oplader"]
+    },
+    {
+      "path": "mobil-tablet-smartwatch/smartwatch",
+      "why": "feed says 'watch' in English product names",
+      "words": ["smartwatch", "watch"],
+      "suffixes": ["smartwatch"],
+      "excludeAny": ["rem", "strap", "band", "etui", "cover", "oplader", "holder", "stativ"]
+    },
+    {
+      "path": "sport-fritid-hobby/samleobjekter-merchandise/samlefigurer",
+      "why": "largest banner-eligible unresolved cluster; feed says actionfigur, taxonomy says samlefigurer",
+      "words": ["actionfigur", "actionfigurer", "samlefigur", "figur", "bamse", "plush"],
+      "suffixes": ["actionfigur", "samlefigur"]
+    },
+    {
+      "path": "tv-lyd-smart-home/horetelefoner-tilbehor/horetelefoner",
+      "why": "feed mixes Danish hovedtelefoner with English earbuds / headset",
+      "words": ["hovedtelefoner", "earbuds", "earphones", "headphones"],
+      "suffixes": ["hovedtelefoner"],
+      "excludeAny": ["etui", "cover", "orepuder", "orepropper", "holder", "stativ"]
+    },
+    {
+      "path": "computer-kontor/printere-kontor/tilbehor-til-printer/printerblak",
+      "why": "feed says blakpatron, taxonomy says printerblak - no shared word",
+      "words": ["blakpatron", "blakpatroner", "blak"],
+      "suffixes": ["blakpatron"]
+    },
+    {
+      "path": "computer-kontor/printere-kontor/tilbehor-til-printer/printer-toner",
+      "why": "feed says toner / tonerpatron",
+      "words": ["toner", "tonerpatron", "tonerpatroner"],
+      "suffixes": ["tonerpatron"]
+    },
+    {
+      "path": "hjem-have/el-belysning/lamper-belysning",
+      "why": "lamps show up as bordlampe / loftlampe / lampe and the leaf slugs are more specific than the feed names",
+      "words": ["lampe", "lamper", "lys"],
+      "suffixes": ["lampe", "lamper"],
+      "excludeAny": ["figur", "pare", "strips"]
+    }
+  ]
+}

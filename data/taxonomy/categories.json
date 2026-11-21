@@ -1,0 +1,3113 @@
+{
+  "source": "elgiganten.dk sitemap_category.xml",
+  "fetched": "2026-11-20",
+  "count": 723,
+  "tree": [
+    {
+      "slug": "computer-kontor",
+      "path": "computer-kontor",
+      "children": [
+        {
+          "slug": "betalingsterminal",
+          "path": "computer-kontor/betalingsterminal"
+        },
+        {
+          "slug": "computere",
+          "path": "computer-kontor/computere",
+          "children": [
+            {
+              "slug": "barbar-computer",
+              "path": "computer-kontor/computere/barbar-computer"
+            },
+            {
+              "slug": "single-board-computer-sbc",
+              "path": "computer-kontor/computere/single-board-computer-sbc"
+            },
+            {
+              "slug": "stationar-pc",
+              "path": "computer-kontor/computere/stationar-pc"
+            }
+          ]
+        },
+        {
+          "slug": "computertilbehor",
+          "path": "computer-kontor/computertilbehor",
+          "children": [
+            {
+              "slug": "batteri-til-barbar-pc",
+              "path": "computer-kontor/computertilbehor/batteri-til-barbar-pc"
+            },
+            {
+              "slug": "computer-holder",
+              "path": "computer-kontor/computertilbehor/computer-holder"
+            },
+            {
+              "slug": "computertasker-etuier",
+              "path": "computer-kontor/computertilbehor/computertasker-etuier",
+              "children": [
+                {
+                  "slug": "computer-sleeve",
+                  "path": "computer-kontor/computertilbehor/computertasker-etuier/computer-sleeve"
+                },
+                {
+                  "slug": "computerrygsak",
+                  "path": "computer-kontor/computertilbehor/computertasker-etuier/computerrygsak"
+                },
+                {
+                  "slug": "computertaske",
+                  "path": "computer-kontor/computertilbehor/computertasker-etuier/computertaske"
+                }
+              ]
+            },
+            {
+              "slug": "diverse-computertilbehor",
+              "path": "computer-kontor/computertilbehor/diverse-computertilbehor"
+            },
+            {
+              "slug": "dockingstation",
+              "path": "computer-kontor/computertilbehor/dockingstation"
+            },
+            {
+              "slug": "headset",
+              "path": "computer-kontor/computertilbehor/headset"
+            },
+            {
+              "slug": "laptopoplader",
+              "path": "computer-kontor/computertilbehor/laptopoplader"
+            },
+            {
+              "slug": "mus-tastatur",
+              "path": "computer-kontor/computertilbehor/mus-tastatur",
+              "children": [
+                {
+                  "slug": "bundle-med-mus-tastatur",
+                  "path": "computer-kontor/computertilbehor/mus-tastatur/bundle-med-mus-tastatur"
+                },
+                {
+                  "slug": "handledsstotte",
+                  "path": "computer-kontor/computertilbehor/mus-tastatur/handledsstotte"
+                },
+                {
+                  "slug": "keycaps",
+                  "path": "computer-kontor/computertilbehor/mus-tastatur/keycaps"
+                },
+                {
+                  "slug": "mus",
+                  "path": "computer-kontor/computertilbehor/mus-tastatur/mus"
+                },
+                {
+                  "slug": "musematte",
+                  "path": "computer-kontor/computertilbehor/mus-tastatur/musematte"
+                },
+                {
+                  "slug": "pegefelt",
+                  "path": "computer-kontor/computertilbehor/mus-tastatur/pegefelt"
+                },
+                {
+                  "slug": "rullemus-centreret-mus",
+                  "path": "computer-kontor/computertilbehor/mus-tastatur/rullemus-centreret-mus"
+                },
+                {
+                  "slug": "tastatur",
+                  "path": "computer-kontor/computertilbehor/mus-tastatur/tastatur"
+                },
+                {
+                  "slug": "tegneplade",
+                  "path": "computer-kontor/computertilbehor/mus-tastatur/tegneplade"
+                }
+              ]
+            },
+            {
+              "slug": "pc-hojttalere",
+              "path": "computer-kontor/computertilbehor/pc-hojttalere"
+            },
+            {
+              "slug": "skarmbriller",
+              "path": "computer-kontor/computertilbehor/skarmbriller"
+            },
+            {
+              "slug": "skarmfilter",
+              "path": "computer-kontor/computertilbehor/skarmfilter"
+            },
+            {
+              "slug": "webkamera",
+              "path": "computer-kontor/computertilbehor/webkamera"
+            }
+          ]
+        },
+        {
+          "slug": "lagring",
+          "path": "computer-kontor/lagring",
+          "children": [
+            {
+              "slug": "ekstern-harddisk-hdd",
+              "path": "computer-kontor/lagring/ekstern-harddisk-hdd"
+            },
+            {
+              "slug": "ekstern-ssd",
+              "path": "computer-kontor/lagring/ekstern-ssd"
+            },
+            {
+              "slug": "kryptowallet",
+              "path": "computer-kontor/lagring/kryptowallet"
+            },
+            {
+              "slug": "lagringsdisk",
+              "path": "computer-kontor/lagring/lagringsdisk"
+            }
+          ]
+        },
+        {
+          "slug": "netvark",
+          "path": "computer-kontor/netvark",
+          "children": [
+            {
+              "slug": "access-point-bridge-repeater",
+              "path": "computer-kontor/netvark/access-point-bridge-repeater"
+            },
+            {
+              "slug": "mesh-netvark",
+              "path": "computer-kontor/netvark/mesh-netvark"
+            },
+            {
+              "slug": "mobilt-bredband",
+              "path": "computer-kontor/netvark/mobilt-bredband"
+            },
+            {
+              "slug": "netvarkskort-og-adaptere",
+              "path": "computer-kontor/netvark/netvarkskort-og-adaptere"
+            },
+            {
+              "slug": "router",
+              "path": "computer-kontor/netvark/router"
+            },
+            {
+              "slug": "switch",
+              "path": "computer-kontor/netvark/switch"
+            },
+            {
+              "slug": "wi-fi-netvarksudvider-antenner",
+              "path": "computer-kontor/netvark/wi-fi-netvarksudvider-antenner"
+            }
+          ]
+        },
+        {
+          "slug": "printere-kontor",
+          "path": "computer-kontor/printere-kontor",
+          "children": [
+            {
+              "slug": "3d-printer",
+              "path": "computer-kontor/printere-kontor/3d-printer"
+            },
+            {
+              "slug": "digital-skaremaskine",
+              "path": "computer-kontor/printere-kontor/digital-skaremaskine"
+            },
+            {
+              "slug": "kontorartikler",
+              "path": "computer-kontor/printere-kontor/kontorartikler",
+              "children": [
+                {
+                  "slug": "arkivering-sortering",
+                  "path": "computer-kontor/printere-kontor/kontorartikler/arkivering-sortering"
+                },
+                {
+                  "slug": "etiketmaskine-labelmaskine",
+                  "path": "computer-kontor/printere-kontor/kontorartikler/etiketmaskine-labelmaskine"
+                },
+                {
+                  "slug": "hangemappe",
+                  "path": "computer-kontor/printere-kontor/kontorartikler/hangemappe"
+                },
+                {
+                  "slug": "hulmaskiner-haftemaskiner",
+                  "path": "computer-kontor/printere-kontor/kontorartikler/hulmaskiner-haftemaskiner"
+                },
+                {
+                  "slug": "lamineringsmaskine",
+                  "path": "computer-kontor/printere-kontor/kontorartikler/lamineringsmaskine"
+                },
+                {
+                  "slug": "lommeregner",
+                  "path": "computer-kontor/printere-kontor/kontorartikler/lommeregner"
+                },
+                {
+                  "slug": "makulator",
+                  "path": "computer-kontor/printere-kontor/kontorartikler/makulator"
+                },
+                {
+                  "slug": "notesbog",
+                  "path": "computer-kontor/printere-kontor/kontorartikler/notesbog"
+                },
+                {
+                  "slug": "plastlommer-mapper",
+                  "path": "computer-kontor/printere-kontor/kontorartikler/plastlommer-mapper"
+                },
+                {
+                  "slug": "ringbind-register",
+                  "path": "computer-kontor/printere-kontor/kontorartikler/ringbind-register"
+                },
+                {
+                  "slug": "skrivebordstilbehor",
+                  "path": "computer-kontor/printere-kontor/kontorartikler/skrivebordstilbehor"
+                },
+                {
+                  "slug": "whiteboard",
+                  "path": "computer-kontor/printere-kontor/kontorartikler/whiteboard"
+                }
+              ]
+            },
+            {
+              "slug": "kontorstol",
+              "path": "computer-kontor/printere-kontor/kontorstol"
+            },
+            {
+              "slug": "presenter",
+              "path": "computer-kontor/printere-kontor/presenter"
+            },
+            {
+              "slug": "printer",
+              "path": "computer-kontor/printere-kontor/printer"
+            },
+            {
+              "slug": "scanner",
+              "path": "computer-kontor/printere-kontor/scanner"
+            },
+            {
+              "slug": "tilbehor-til-printer",
+              "path": "computer-kontor/printere-kontor/tilbehor-til-printer",
+              "children": [
+                {
+                  "slug": "billedtromle-til-printer",
+                  "path": "computer-kontor/printere-kontor/tilbehor-til-printer/billedtromle-til-printer"
+                },
+                {
+                  "slug": "papirbakke",
+                  "path": "computer-kontor/printere-kontor/tilbehor-til-printer/papirbakke"
+                },
+                {
+                  "slug": "printer-fotopapir",
+                  "path": "computer-kontor/printere-kontor/tilbehor-til-printer/printer-fotopapir"
+                },
+                {
+                  "slug": "printer-toner",
+                  "path": "computer-kontor/printere-kontor/tilbehor-til-printer/printer-toner"
+                },
+                {
+                  "slug": "printerblak",
+                  "path": "computer-kontor/printere-kontor/tilbehor-til-printer/printerblak"
+                },
+                {
+                  "slug": "printerkabler",
+                  "path": "computer-kontor/printere-kontor/tilbehor-til-printer/printerkabler"
+                },
+                {
+                  "slug": "rengoring-af-printere",
+                  "path": "computer-kontor/printere-kontor/tilbehor-til-printer/rengoring-af-printere"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "slug": "skarme-tilbehor",
+          "path": "computer-kontor/skarme-tilbehor",
+          "children": [
+            {
+              "slug": "monitor",
+              "path": "computer-kontor/skarme-tilbehor/monitor"
+            },
+            {
+              "slug": "skarmbeslag-tilbehor",
+              "path": "computer-kontor/skarme-tilbehor/skarmbeslag-tilbehor"
+            }
+          ]
+        },
+        {
+          "slug": "software",
+          "path": "computer-kontor/software",
+          "children": [
+            {
+              "slug": "anden-software",
+              "path": "computer-kontor/software/anden-software"
+            },
+            {
+              "slug": "antivirus",
+              "path": "computer-kontor/software/antivirus"
+            },
+            {
+              "slug": "lydredigeringsprogram",
+              "path": "computer-kontor/software/lydredigeringsprogram"
+            },
+            {
+              "slug": "office-programmer",
+              "path": "computer-kontor/software/office-programmer"
+            },
+            {
+              "slug": "operativsystem",
+              "path": "computer-kontor/software/operativsystem"
+            },
+            {
+              "slug": "videoredigering",
+              "path": "computer-kontor/software/videoredigering"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "epoq",
+      "path": "epoq",
+      "children": [
+        {
+          "slug": "epoq-produkter",
+          "path": "epoq/epoq-produkter",
+          "children": [
+            {
+              "slug": "bordplade",
+              "path": "epoq/epoq-produkter/bordplade"
+            },
+            {
+              "slug": "fronter-og-lager-epoq",
+              "path": "epoq/epoq-produkter/fronter-og-lager-epoq",
+              "children": [
+                {
+                  "slug": "epoq-canvas",
+                  "path": "epoq/epoq-produkter/fronter-og-lager-epoq/epoq-canvas"
+                },
+                {
+                  "slug": "epoq-contour",
+                  "path": "epoq/epoq-produkter/fronter-og-lager-epoq/epoq-contour"
+                },
+                {
+                  "slug": "epoq-core",
+                  "path": "epoq/epoq-produkter/fronter-og-lager-epoq/epoq-core"
+                },
+                {
+                  "slug": "epoq-edge",
+                  "path": "epoq/epoq-produkter/fronter-og-lager-epoq/epoq-edge"
+                },
+                {
+                  "slug": "epoq-gloss",
+                  "path": "epoq/epoq-produkter/fronter-og-lager-epoq/epoq-gloss"
+                },
+                {
+                  "slug": "epoq-heritage",
+                  "path": "epoq/epoq-produkter/fronter-og-lager-epoq/epoq-heritage"
+                },
+                {
+                  "slug": "epoq-integra",
+                  "path": "epoq/epoq-produkter/fronter-og-lager-epoq/epoq-integra"
+                },
+                {
+                  "slug": "epoq-lamella",
+                  "path": "epoq/epoq-produkter/fronter-og-lager-epoq/epoq-lamella"
+                },
+                {
+                  "slug": "epoq-pillar",
+                  "path": "epoq/epoq-produkter/fronter-og-lager-epoq/epoq-pillar"
+                },
+                {
+                  "slug": "epoq-pure",
+                  "path": "epoq/epoq-produkter/fronter-og-lager-epoq/epoq-pure"
+                },
+                {
+                  "slug": "epoq-trend",
+                  "path": "epoq/epoq-produkter/fronter-og-lager-epoq/epoq-trend"
+                }
+              ]
+            },
+            {
+              "slug": "handtag-greb",
+              "path": "epoq/epoq-produkter/handtag-greb"
+            },
+            {
+              "slug": "kokkenbelysning-stikkontakter",
+              "path": "epoq/epoq-produkter/kokkenbelysning-stikkontakter",
+              "children": [
+                {
+                  "slug": "kokkenbelysning",
+                  "path": "epoq/epoq-produkter/kokkenbelysning-stikkontakter/kokkenbelysning"
+                },
+                {
+                  "slug": "stikkontakt-til-kokken",
+                  "path": "epoq/epoq-produkter/kokkenbelysning-stikkontakter/stikkontakt-til-kokken"
+                }
+              ]
+            },
+            {
+              "slug": "kokkenpleje-reservedele",
+              "path": "epoq/epoq-produkter/kokkenpleje-reservedele",
+              "children": [
+                {
+                  "slug": "dakmaling",
+                  "path": "epoq/epoq-produkter/kokkenpleje-reservedele/dakmaling"
+                },
+                {
+                  "slug": "kokkenrengoring",
+                  "path": "epoq/epoq-produkter/kokkenpleje-reservedele/kokkenrengoring"
+                },
+                {
+                  "slug": "kokkenreservedele",
+                  "path": "epoq/epoq-produkter/kokkenpleje-reservedele/kokkenreservedele"
+                }
+              ]
+            },
+            {
+              "slug": "kokkenvask-og-vandhane",
+              "path": "epoq/epoq-produkter/kokkenvask-og-vandhane",
+              "children": [
+                {
+                  "slug": "kokkenvask",
+                  "path": "epoq/epoq-produkter/kokkenvask-og-vandhane/kokkenvask"
+                },
+                {
+                  "slug": "sabedispenser",
+                  "path": "epoq/epoq-produkter/kokkenvask-og-vandhane/sabedispenser"
+                },
+                {
+                  "slug": "vandhane",
+                  "path": "epoq/epoq-produkter/kokkenvask-og-vandhane/vandhane"
+                }
+              ]
+            },
+            {
+              "slug": "skab-interior",
+              "path": "epoq/epoq-produkter/skab-interior",
+              "children": [
+                {
+                  "slug": "affaldssortering",
+                  "path": "epoq/epoq-produkter/skab-interior/affaldssortering"
+                },
+                {
+                  "slug": "hangsler-beslag",
+                  "path": "epoq/epoq-produkter/skab-interior/hangsler-beslag"
+                },
+                {
+                  "slug": "hylder",
+                  "path": "epoq/epoq-produkter/skab-interior/hylder"
+                },
+                {
+                  "slug": "kokkenskabe",
+                  "path": "epoq/epoq-produkter/skab-interior/kokkenskabe"
+                },
+                {
+                  "slug": "lister-mellemstykker",
+                  "path": "epoq/epoq-produkter/skab-interior/lister-mellemstykker"
+                },
+                {
+                  "slug": "skabstilbehor",
+                  "path": "epoq/epoq-produkter/skab-interior/skabstilbehor"
+                },
+                {
+                  "slug": "skuffeindretning",
+                  "path": "epoq/epoq-produkter/skab-interior/skuffeindretning"
+                },
+                {
+                  "slug": "skuffer",
+                  "path": "epoq/epoq-produkter/skab-interior/skuffer"
+                },
+                {
+                  "slug": "udtrakkelige-skabslosninger",
+                  "path": "epoq/epoq-produkter/skab-interior/udtrakkelige-skabslosninger"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "gaming",
+      "path": "gaming",
+      "children": [
+        {
+          "slug": "gamingborde-gamingstole",
+          "path": "gaming/gamingborde-gamingstole",
+          "children": [
+            {
+              "slug": "gamingbord",
+              "path": "gaming/gamingborde-gamingstole/gamingbord"
+            },
+            {
+              "slug": "gamingstol",
+              "path": "gaming/gamingborde-gamingstole/gamingstol"
+            },
+            {
+              "slug": "racingsade-og-sim-racing-cockpit",
+              "path": "gaming/gamingborde-gamingstole/racingsade-og-sim-racing-cockpit"
+            },
+            {
+              "slug": "tilbehor-til-gamingstole",
+              "path": "gaming/gamingborde-gamingstole/tilbehor-til-gamingstole"
+            }
+          ]
+        },
+        {
+          "slug": "handholdt-gaming-pc",
+          "path": "gaming/handholdt-gaming-pc"
+        },
+        {
+          "slug": "hardware",
+          "path": "gaming/hardware",
+          "children": [
+            {
+              "slug": "elgiganten-build",
+              "path": "gaming/hardware/elgiganten-build"
+            },
+            {
+              "slug": "grafikkort-gpu",
+              "path": "gaming/hardware/grafikkort-gpu"
+            },
+            {
+              "slug": "intern-harddisk",
+              "path": "gaming/hardware/intern-harddisk",
+              "children": [
+                {
+                  "slug": "intern-harddisk-hdd",
+                  "path": "gaming/hardware/intern-harddisk/intern-harddisk-hdd"
+                },
+                {
+                  "slug": "intern-ssd",
+                  "path": "gaming/hardware/intern-harddisk/intern-ssd"
+                },
+                {
+                  "slug": "optisk-drev",
+                  "path": "gaming/hardware/intern-harddisk/optisk-drev"
+                }
+              ]
+            },
+            {
+              "slug": "lydkort",
+              "path": "gaming/hardware/lydkort"
+            },
+            {
+              "slug": "motherboard",
+              "path": "gaming/hardware/motherboard"
+            },
+            {
+              "slug": "pc-blasere-koling",
+              "path": "gaming/hardware/pc-blasere-koling",
+              "children": [
+                {
+                  "slug": "kolepasta-og-tilbehor-til-pc-koling",
+                  "path": "gaming/hardware/pc-blasere-koling/kolepasta-og-tilbehor-til-pc-koling"
+                },
+                {
+                  "slug": "luftkoling-til-processor",
+                  "path": "gaming/hardware/pc-blasere-koling/luftkoling-til-processor"
+                },
+                {
+                  "slug": "pc-blaser",
+                  "path": "gaming/hardware/pc-blasere-koling/pc-blaser"
+                },
+                {
+                  "slug": "vandkoling-til-pc",
+                  "path": "gaming/hardware/pc-blasere-koling/vandkoling-til-pc"
+                }
+              ]
+            },
+            {
+              "slug": "pc-kabinet-og-tilbehor",
+              "path": "gaming/hardware/pc-kabinet-og-tilbehor",
+              "children": [
+                {
+                  "slug": "casemods",
+                  "path": "gaming/hardware/pc-kabinet-og-tilbehor/casemods"
+                },
+                {
+                  "slug": "kabinet",
+                  "path": "gaming/hardware/pc-kabinet-og-tilbehor/kabinet"
+                },
+                {
+                  "slug": "kabinettilbehor",
+                  "path": "gaming/hardware/pc-kabinet-og-tilbehor/kabinettilbehor"
+                }
+              ]
+            },
+            {
+              "slug": "processor-cpu",
+              "path": "gaming/hardware/processor-cpu"
+            },
+            {
+              "slug": "psu-stromforsyning-til-computer",
+              "path": "gaming/hardware/psu-stromforsyning-til-computer",
+              "children": [
+                {
+                  "slug": "psu",
+                  "path": "gaming/hardware/psu-stromforsyning-til-computer/psu"
+                },
+                {
+                  "slug": "tilbehor-til-stromforsyning-psu",
+                  "path": "gaming/hardware/psu-stromforsyning-til-computer/tilbehor-til-stromforsyning-psu"
+                }
+              ]
+            },
+            {
+              "slug": "ram",
+              "path": "gaming/hardware/ram"
+            }
+          ]
+        },
+        {
+          "slug": "spil",
+          "path": "gaming/spil"
+        },
+        {
+          "slug": "spillekonsol-tilbehor",
+          "path": "gaming/spillekonsol-tilbehor",
+          "children": [
+            {
+              "slug": "nintendo-switch",
+              "path": "gaming/spillekonsol-tilbehor/nintendo-switch",
+              "children": [
+                {
+                  "slug": "nintendo-spillekonsol",
+                  "path": "gaming/spillekonsol-tilbehor/nintendo-switch/nintendo-spillekonsol"
+                },
+                {
+                  "slug": "nintendo-tilbehor",
+                  "path": "gaming/spillekonsol-tilbehor/nintendo-switch/nintendo-tilbehor"
+                }
+              ]
+            },
+            {
+              "slug": "playstation",
+              "path": "gaming/spillekonsol-tilbehor/playstation",
+              "children": [
+                {
+                  "slug": "ps5-playstation-5-spillekonsol",
+                  "path": "gaming/spillekonsol-tilbehor/playstation/ps5-playstation-5-spillekonsol"
+                },
+                {
+                  "slug": "tilbehor-til-playstation",
+                  "path": "gaming/spillekonsol-tilbehor/playstation/tilbehor-til-playstation"
+                }
+              ]
+            },
+            {
+              "slug": "retro-gaming",
+              "path": "gaming/spillekonsol-tilbehor/retro-gaming"
+            },
+            {
+              "slug": "xbox",
+              "path": "gaming/spillekonsol-tilbehor/xbox",
+              "children": [
+                {
+                  "slug": "tilbehor-til-xbox",
+                  "path": "gaming/spillekonsol-tilbehor/xbox/tilbehor-til-xbox"
+                },
+                {
+                  "slug": "xbox-spillekonsol",
+                  "path": "gaming/spillekonsol-tilbehor/xbox/xbox-spillekonsol"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "slug": "spiltilbehor",
+          "path": "gaming/spiltilbehor",
+          "children": [
+            {
+              "slug": "gaming-controllere-til-pc-og-smartphone",
+              "path": "gaming/spiltilbehor/gaming-controllere-til-pc-og-smartphone"
+            },
+            {
+              "slug": "gaming-headset",
+              "path": "gaming/spiltilbehor/gaming-headset"
+            },
+            {
+              "slug": "joystick",
+              "path": "gaming/spiltilbehor/joystick"
+            },
+            {
+              "slug": "rat-pedaler-til-gaming",
+              "path": "gaming/spiltilbehor/rat-pedaler-til-gaming"
+            },
+            {
+              "slug": "streaming-tilbehor",
+              "path": "gaming/spiltilbehor/streaming-tilbehor"
+            }
+          ]
+        },
+        {
+          "slug": "vr-gaming-virtual-reality",
+          "path": "gaming/vr-gaming-virtual-reality"
+        }
+      ]
+    },
+    {
+      "slug": "hjem-have",
+      "path": "hjem-have",
+      "children": [
+        {
+          "slug": "badevarelsestilbehor",
+          "path": "hjem-have/badevarelsestilbehor"
+        },
+        {
+          "slug": "el-belysning",
+          "path": "hjem-have/el-belysning",
+          "children": [
+            {
+              "slug": "el-artikler",
+              "path": "hjem-have/el-belysning/el-artikler",
+              "children": [
+                {
+                  "slug": "forgreningsdase",
+                  "path": "hjem-have/el-belysning/el-artikler/forgreningsdase"
+                },
+                {
+                  "slug": "forlangerledning",
+                  "path": "hjem-have/el-belysning/el-artikler/forlangerledning"
+                },
+                {
+                  "slug": "generator",
+                  "path": "hjem-have/el-belysning/el-artikler/generator"
+                },
+                {
+                  "slug": "kabelclips",
+                  "path": "hjem-have/el-belysning/el-artikler/kabelclips"
+                },
+                {
+                  "slug": "kabler-ledninger",
+                  "path": "hjem-have/el-belysning/el-artikler/kabler-ledninger"
+                },
+                {
+                  "slug": "sikring",
+                  "path": "hjem-have/el-belysning/el-artikler/sikring"
+                },
+                {
+                  "slug": "stik-adaptere",
+                  "path": "hjem-have/el-belysning/el-artikler/stik-adaptere"
+                },
+                {
+                  "slug": "stikdase",
+                  "path": "hjem-have/el-belysning/el-artikler/stikdase"
+                },
+                {
+                  "slug": "stikkontakt",
+                  "path": "hjem-have/el-belysning/el-artikler/stikkontakt"
+                },
+                {
+                  "slug": "tilbehor-til-powerstation",
+                  "path": "hjem-have/el-belysning/el-artikler/tilbehor-til-powerstation"
+                }
+              ]
+            },
+            {
+              "slug": "lamper-belysning",
+              "path": "hjem-have/el-belysning/lamper-belysning",
+              "children": [
+                {
+                  "slug": "bordlamper-gulvlamper",
+                  "path": "hjem-have/el-belysning/lamper-belysning/bordlamper-gulvlamper"
+                },
+                {
+                  "slug": "led-pare-elpare",
+                  "path": "hjem-have/el-belysning/lamper-belysning/led-pare-elpare"
+                },
+                {
+                  "slug": "led-strips",
+                  "path": "hjem-have/el-belysning/lamper-belysning/led-strips"
+                },
+                {
+                  "slug": "loftslamper",
+                  "path": "hjem-have/el-belysning/lamper-belysning/loftslamper"
+                },
+                {
+                  "slug": "lommelygte",
+                  "path": "hjem-have/el-belysning/lamper-belysning/lommelygte"
+                },
+                {
+                  "slug": "lysstofror",
+                  "path": "hjem-have/el-belysning/lamper-belysning/lysstofror"
+                },
+                {
+                  "slug": "omgivende-dekorativ-belysning",
+                  "path": "hjem-have/el-belysning/lamper-belysning/omgivende-dekorativ-belysning"
+                },
+                {
+                  "slug": "pandelampe",
+                  "path": "hjem-have/el-belysning/lamper-belysning/pandelampe"
+                },
+                {
+                  "slug": "spotlights-downlight",
+                  "path": "hjem-have/el-belysning/lamper-belysning/spotlights-downlight"
+                },
+                {
+                  "slug": "stromafbrydere-dampere-og-lysstyring",
+                  "path": "hjem-have/el-belysning/lamper-belysning/stromafbrydere-dampere-og-lysstyring"
+                },
+                {
+                  "slug": "udendorsbelysning",
+                  "path": "hjem-have/el-belysning/lamper-belysning/udendorsbelysning"
+                }
+              ]
+            },
+            {
+              "slug": "power-station",
+              "path": "hjem-have/el-belysning/power-station"
+            },
+            {
+              "slug": "solpaneler-solceller",
+              "path": "hjem-have/el-belysning/solpaneler-solceller"
+            }
+          ]
+        },
+        {
+          "slug": "grill",
+          "path": "hjem-have/grill",
+          "children": [
+            {
+              "slug": "bordgrill",
+              "path": "hjem-have/grill/bordgrill"
+            },
+            {
+              "slug": "elektrisk-grill",
+              "path": "hjem-have/grill/elektrisk-grill"
+            },
+            {
+              "slug": "gasgrill",
+              "path": "hjem-have/grill/gasgrill"
+            },
+            {
+              "slug": "grilltilbehor",
+              "path": "hjem-have/grill/grilltilbehor",
+              "children": [
+                {
+                  "slug": "gasregulator-grillstarter",
+                  "path": "hjem-have/grill/grilltilbehor/gasregulator-grillstarter"
+                },
+                {
+                  "slug": "grill-stegetermometer",
+                  "path": "hjem-have/grill/grilltilbehor/grill-stegetermometer"
+                },
+                {
+                  "slug": "grillbestik-grillredskaber",
+                  "path": "hjem-have/grill/grilltilbehor/grillbestik-grillredskaber"
+                },
+                {
+                  "slug": "grillborste-og-rengoring-af-grill",
+                  "path": "hjem-have/grill/grilltilbehor/grillborste-og-rengoring-af-grill"
+                },
+                {
+                  "slug": "grillkul",
+                  "path": "hjem-have/grill/grilltilbehor/grillkul"
+                },
+                {
+                  "slug": "grillovertrak",
+                  "path": "hjem-have/grill/grilltilbehor/grillovertrak"
+                },
+                {
+                  "slug": "grillriste-grillplader",
+                  "path": "hjem-have/grill/grilltilbehor/grillriste-grillplader"
+                },
+                {
+                  "slug": "traflis-rogningstilbehor",
+                  "path": "hjem-have/grill/grilltilbehor/traflis-rogningstilbehor"
+                }
+              ]
+            },
+            {
+              "slug": "kulgrill",
+              "path": "hjem-have/grill/kulgrill"
+            },
+            {
+              "slug": "pizzaovn",
+              "path": "hjem-have/grill/pizzaovn"
+            },
+            {
+              "slug": "pizzatilbehor",
+              "path": "hjem-have/grill/pizzatilbehor"
+            },
+            {
+              "slug": "smoker-rogboks-og-tilbehor-til-rogning",
+              "path": "hjem-have/grill/smoker-rogboks-og-tilbehor-til-rogning"
+            }
+          ]
+        },
+        {
+          "slug": "handtorrer",
+          "path": "hjem-have/handtorrer"
+        },
+        {
+          "slug": "have-udendorsliv",
+          "path": "hjem-have/have-udendorsliv",
+          "children": [
+            {
+              "slug": "havemaskiner-haveredskaber",
+              "path": "hjem-have/have-udendorsliv/havemaskiner-haveredskaber",
+              "children": [
+                {
+                  "slug": "grastrimmer-og-hakkesaks",
+                  "path": "hjem-have/have-udendorsliv/havemaskiner-haveredskaber/grastrimmer-og-hakkesaks"
+                },
+                {
+                  "slug": "hojtryksrenser",
+                  "path": "hjem-have/have-udendorsliv/havemaskiner-haveredskaber/hojtryksrenser"
+                },
+                {
+                  "slug": "lovblaser",
+                  "path": "hjem-have/have-udendorsliv/havemaskiner-haveredskaber/lovblaser"
+                },
+                {
+                  "slug": "myggefanger",
+                  "path": "hjem-have/have-udendorsliv/havemaskiner-haveredskaber/myggefanger"
+                },
+                {
+                  "slug": "planeklipper",
+                  "path": "hjem-have/have-udendorsliv/havemaskiner-haveredskaber/planeklipper"
+                },
+                {
+                  "slug": "snerydder",
+                  "path": "hjem-have/have-udendorsliv/havemaskiner-haveredskaber/snerydder"
+                },
+                {
+                  "slug": "tilbehor-til-robotplaneklippere",
+                  "path": "hjem-have/have-udendorsliv/havemaskiner-haveredskaber/tilbehor-til-robotplaneklippere"
+                },
+                {
+                  "slug": "vandslange",
+                  "path": "hjem-have/have-udendorsliv/havemaskiner-haveredskaber/vandslange"
+                },
+                {
+                  "slug": "vejrstation",
+                  "path": "hjem-have/have-udendorsliv/havemaskiner-haveredskaber/vejrstation"
+                }
+              ]
+            },
+            {
+              "slug": "havemobler",
+              "path": "hjem-have/have-udendorsliv/havemobler"
+            },
+            {
+              "slug": "skadedyrsbekampelse",
+              "path": "hjem-have/have-udendorsliv/skadedyrsbekampelse"
+            },
+            {
+              "slug": "swimmingpool-tilbehor",
+              "path": "hjem-have/have-udendorsliv/swimmingpool-tilbehor"
+            },
+            {
+              "slug": "terrassevarmer",
+              "path": "hjem-have/have-udendorsliv/terrassevarmer"
+            }
+          ]
+        },
+        {
+          "slug": "indeklima-opvarmning",
+          "path": "hjem-have/indeklima-opvarmning",
+          "children": [
+            {
+              "slug": "afkoling",
+              "path": "hjem-have/indeklima-opvarmning/afkoling",
+              "children": [
+                {
+                  "slug": "aircondition",
+                  "path": "hjem-have/indeklima-opvarmning/afkoling/aircondition"
+                },
+                {
+                  "slug": "ventilator",
+                  "path": "hjem-have/indeklima-opvarmning/afkoling/ventilator"
+                }
+              ]
+            },
+            {
+              "slug": "luftkvalitet",
+              "path": "hjem-have/indeklima-opvarmning/luftkvalitet",
+              "children": [
+                {
+                  "slug": "hygrometer",
+                  "path": "hjem-have/indeklima-opvarmning/luftkvalitet/hygrometer"
+                },
+                {
+                  "slug": "luftaffugter",
+                  "path": "hjem-have/indeklima-opvarmning/luftkvalitet/luftaffugter"
+                },
+                {
+                  "slug": "luftfugter",
+                  "path": "hjem-have/indeklima-opvarmning/luftkvalitet/luftfugter"
+                },
+                {
+                  "slug": "luftrenser",
+                  "path": "hjem-have/indeklima-opvarmning/luftkvalitet/luftrenser"
+                },
+                {
+                  "slug": "radonmalere-luftkvalitetsmalere",
+                  "path": "hjem-have/indeklima-opvarmning/luftkvalitet/radonmalere-luftkvalitetsmalere"
+                }
+              ]
+            },
+            {
+              "slug": "opvarmning",
+              "path": "hjem-have/indeklima-opvarmning/opvarmning",
+              "children": [
+                {
+                  "slug": "radiator",
+                  "path": "hjem-have/indeklima-opvarmning/opvarmning/radiator",
+                  "children": [
+                    {
+                      "slug": "fritstaende-radiator",
+                      "path": "hjem-have/indeklima-opvarmning/opvarmning/radiator/fritstaende-radiator"
+                    },
+                    {
+                      "slug": "varmeblaser",
+                      "path": "hjem-have/indeklima-opvarmning/opvarmning/radiator/varmeblaser"
+                    },
+                    {
+                      "slug": "varmepanel",
+                      "path": "hjem-have/indeklima-opvarmning/opvarmning/radiator/varmepanel"
+                    }
+                  ]
+                },
+                {
+                  "slug": "skotorrer",
+                  "path": "hjem-have/indeklima-opvarmning/opvarmning/skotorrer"
+                },
+                {
+                  "slug": "termostat",
+                  "path": "hjem-have/indeklima-opvarmning/opvarmning/termostat"
+                },
+                {
+                  "slug": "varmepumpe",
+                  "path": "hjem-have/indeklima-opvarmning/opvarmning/varmepumpe"
+                }
+              ]
+            },
+            {
+              "slug": "tilbehor-til-indeklima-opvarmning",
+              "path": "hjem-have/indeklima-opvarmning/tilbehor-til-indeklima-opvarmning"
+            }
+          ]
+        },
+        {
+          "slug": "jul",
+          "path": "hjem-have/jul",
+          "children": [
+            {
+              "slug": "diverse-juletilbehor",
+              "path": "hjem-have/jul/diverse-juletilbehor"
+            },
+            {
+              "slug": "julebelysning-juletraslys",
+              "path": "hjem-have/jul/julebelysning-juletraslys"
+            },
+            {
+              "slug": "julekalender",
+              "path": "hjem-have/jul/julekalender"
+            },
+            {
+              "slug": "julesweater",
+              "path": "hjem-have/jul/julesweater"
+            },
+            {
+              "slug": "juletra-og-julepynt",
+              "path": "hjem-have/jul/juletra-og-julepynt"
+            }
+          ]
+        },
+        {
+          "slug": "kaffe-te",
+          "path": "hjem-have/kaffe-te",
+          "children": [
+            {
+              "slug": "espressomaskine",
+              "path": "hjem-have/kaffe-te/espressomaskine"
+            },
+            {
+              "slug": "kaffemaskine",
+              "path": "hjem-have/kaffe-te/kaffemaskine"
+            },
+            {
+              "slug": "kaffetilbehor",
+              "path": "hjem-have/kaffe-te/kaffetilbehor",
+              "children": [
+                {
+                  "slug": "afkalkning-og-rens-til-kaffemaskiner",
+                  "path": "hjem-have/kaffe-te/kaffetilbehor/afkalkning-og-rens-til-kaffemaskiner"
+                },
+                {
+                  "slug": "kaffe-te-diverse-tilbehor",
+                  "path": "hjem-have/kaffe-te/kaffetilbehor/kaffe-te-diverse-tilbehor"
+                },
+                {
+                  "slug": "kaffebonner",
+                  "path": "hjem-have/kaffe-te/kaffetilbehor/kaffebonner"
+                },
+                {
+                  "slug": "kaffefiltre",
+                  "path": "hjem-have/kaffe-te/kaffetilbehor/kaffefiltre"
+                },
+                {
+                  "slug": "kaffekande",
+                  "path": "hjem-have/kaffe-te/kaffetilbehor/kaffekande"
+                },
+                {
+                  "slug": "kaffekapsler",
+                  "path": "hjem-have/kaffe-te/kaffetilbehor/kaffekapsler"
+                },
+                {
+                  "slug": "kaffekvarn",
+                  "path": "hjem-have/kaffe-te/kaffetilbehor/kaffekvarn"
+                },
+                {
+                  "slug": "kapselholder",
+                  "path": "hjem-have/kaffe-te/kaffetilbehor/kapselholder"
+                },
+                {
+                  "slug": "malkeskummer",
+                  "path": "hjem-have/kaffe-te/kaffetilbehor/malkeskummer"
+                }
+              ]
+            },
+            {
+              "slug": "kapselmaskine",
+              "path": "hjem-have/kaffe-te/kapselmaskine"
+            },
+            {
+              "slug": "perkolator",
+              "path": "hjem-have/kaffe-te/perkolator"
+            },
+            {
+              "slug": "stempelkande",
+              "path": "hjem-have/kaffe-te/stempelkande"
+            },
+            {
+              "slug": "te-tilbehor",
+              "path": "hjem-have/kaffe-te/te-tilbehor"
+            }
+          ]
+        },
+        {
+          "slug": "kokkenredskaber",
+          "path": "hjem-have/kokkenredskaber",
+          "children": [
+            {
+              "slug": "andet-kokkenudstyr",
+              "path": "hjem-have/kokkenredskaber/andet-kokkenudstyr"
+            },
+            {
+              "slug": "bestik",
+              "path": "hjem-have/kokkenredskaber/bestik"
+            },
+            {
+              "slug": "glas",
+              "path": "hjem-have/kokkenredskaber/glas"
+            },
+            {
+              "slug": "gryder",
+              "path": "hjem-have/kokkenredskaber/gryder"
+            },
+            {
+              "slug": "kartoffelskraller",
+              "path": "hjem-have/kokkenredskaber/kartoffelskraller"
+            },
+            {
+              "slug": "knivsliber",
+              "path": "hjem-have/kokkenredskaber/knivsliber"
+            },
+            {
+              "slug": "kokkenkniv",
+              "path": "hjem-have/kokkenredskaber/kokkenkniv"
+            },
+            {
+              "slug": "kokkenvagt",
+              "path": "hjem-have/kokkenredskaber/kokkenvagt"
+            },
+            {
+              "slug": "krus-kopper",
+              "path": "hjem-have/kokkenredskaber/krus-kopper"
+            },
+            {
+              "slug": "madopbevaring",
+              "path": "hjem-have/kokkenredskaber/madopbevaring"
+            },
+            {
+              "slug": "skale",
+              "path": "hjem-have/kokkenredskaber/skale"
+            },
+            {
+              "slug": "stegepander",
+              "path": "hjem-have/kokkenredskaber/stegepander"
+            },
+            {
+              "slug": "tallerkner",
+              "path": "hjem-have/kokkenredskaber/tallerkner"
+            },
+            {
+              "slug": "termokander",
+              "path": "hjem-have/kokkenredskaber/termokander"
+            },
+            {
+              "slug": "vandflaske",
+              "path": "hjem-have/kokkenredskaber/vandflaske"
+            }
+          ]
+        },
+        {
+          "slug": "kokkenudstyr",
+          "path": "hjem-have/kokkenudstyr",
+          "children": [
+            {
+              "slug": "airfryer",
+              "path": "hjem-have/kokkenudstyr/airfryer"
+            },
+            {
+              "slug": "bagning-desserter",
+              "path": "hjem-have/kokkenudstyr/bagning-desserter",
+              "children": [
+                {
+                  "slug": "bagemaskiner",
+                  "path": "hjem-have/kokkenudstyr/bagning-desserter/bagemaskiner"
+                },
+                {
+                  "slug": "candyfloss-maskine",
+                  "path": "hjem-have/kokkenudstyr/bagning-desserter/candyfloss-maskine"
+                },
+                {
+                  "slug": "chokoladefontane",
+                  "path": "hjem-have/kokkenudstyr/bagning-desserter/chokoladefontane"
+                },
+                {
+                  "slug": "ismaskine-slush-ice-maskine",
+                  "path": "hjem-have/kokkenudstyr/bagning-desserter/ismaskine-slush-ice-maskine"
+                },
+                {
+                  "slug": "popcornmaskine",
+                  "path": "hjem-have/kokkenudstyr/bagning-desserter/popcornmaskine"
+                },
+                {
+                  "slug": "slik-chokolade",
+                  "path": "hjem-have/kokkenudstyr/bagning-desserter/slik-chokolade"
+                }
+              ]
+            },
+            {
+              "slug": "brodrister",
+              "path": "hjem-have/kokkenudstyr/brodrister"
+            },
+            {
+              "slug": "elkedel",
+              "path": "hjem-have/kokkenudstyr/elkedel"
+            },
+            {
+              "slug": "frituregryde",
+              "path": "hjem-have/kokkenudstyr/frituregryde"
+            },
+            {
+              "slug": "isterningmaskine",
+              "path": "hjem-have/kokkenudstyr/isterningmaskine"
+            },
+            {
+              "slug": "kokkenmaskiner-madlavning",
+              "path": "hjem-have/kokkenudstyr/kokkenmaskiner-madlavning",
+              "children": [
+                {
+                  "slug": "aggekoger",
+                  "path": "hjem-have/kokkenudstyr/kokkenmaskiner-madlavning/aggekoger"
+                },
+                {
+                  "slug": "dampkoger",
+                  "path": "hjem-have/kokkenudstyr/kokkenmaskiner-madlavning/dampkoger"
+                },
+                {
+                  "slug": "dehydrator",
+                  "path": "hjem-have/kokkenudstyr/kokkenmaskiner-madlavning/dehydrator"
+                },
+                {
+                  "slug": "diverse-kokkenapparater",
+                  "path": "hjem-have/kokkenudstyr/kokkenmaskiner-madlavning/diverse-kokkenapparater"
+                },
+                {
+                  "slug": "foodprocessor",
+                  "path": "hjem-have/kokkenudstyr/kokkenmaskiner-madlavning/foodprocessor"
+                },
+                {
+                  "slug": "kodhakker",
+                  "path": "hjem-have/kokkenudstyr/kokkenmaskiner-madlavning/kodhakker"
+                },
+                {
+                  "slug": "kokkenmaskine",
+                  "path": "hjem-have/kokkenudstyr/kokkenmaskiner-madlavning/kokkenmaskine"
+                },
+                {
+                  "slug": "loghakker",
+                  "path": "hjem-have/kokkenudstyr/kokkenmaskiner-madlavning/loghakker"
+                },
+                {
+                  "slug": "palagsmaskine",
+                  "path": "hjem-have/kokkenudstyr/kokkenmaskiner-madlavning/palagsmaskine"
+                },
+                {
+                  "slug": "pastamaskine",
+                  "path": "hjem-have/kokkenudstyr/kokkenmaskiner-madlavning/pastamaskine"
+                },
+                {
+                  "slug": "riskoger",
+                  "path": "hjem-have/kokkenudstyr/kokkenmaskiner-madlavning/riskoger"
+                },
+                {
+                  "slug": "slow-cooker",
+                  "path": "hjem-have/kokkenudstyr/kokkenmaskiner-madlavning/slow-cooker"
+                },
+                {
+                  "slug": "sous-vide-vakuumpakker",
+                  "path": "hjem-have/kokkenudstyr/kokkenmaskiner-madlavning/sous-vide-vakuumpakker"
+                },
+                {
+                  "slug": "spiralizer",
+                  "path": "hjem-have/kokkenudstyr/kokkenmaskiner-madlavning/spiralizer"
+                },
+                {
+                  "slug": "tilbehor-til-kokkenmaskine",
+                  "path": "hjem-have/kokkenudstyr/kokkenmaskiner-madlavning/tilbehor-til-kokkenmaskine"
+                },
+                {
+                  "slug": "trykkoger-og-multicooker",
+                  "path": "hjem-have/kokkenudstyr/kokkenmaskiner-madlavning/trykkoger-og-multicooker"
+                }
+              ]
+            },
+            {
+              "slug": "kulsyremaskine",
+              "path": "hjem-have/kokkenudstyr/kulsyremaskine"
+            },
+            {
+              "slug": "miksere-blendere",
+              "path": "hjem-have/kokkenudstyr/miksere-blendere",
+              "children": [
+                {
+                  "slug": "blender",
+                  "path": "hjem-have/kokkenudstyr/miksere-blendere/blender"
+                },
+                {
+                  "slug": "handmixer",
+                  "path": "hjem-have/kokkenudstyr/miksere-blendere/handmixer"
+                },
+                {
+                  "slug": "juicer-citruspresser",
+                  "path": "hjem-have/kokkenudstyr/miksere-blendere/juicer-citruspresser"
+                },
+                {
+                  "slug": "stavblender",
+                  "path": "hjem-have/kokkenudstyr/miksere-blendere/stavblender"
+                }
+              ]
+            },
+            {
+              "slug": "toaster",
+              "path": "hjem-have/kokkenudstyr/toaster"
+            },
+            {
+              "slug": "vaffeljern",
+              "path": "hjem-have/kokkenudstyr/vaffeljern"
+            },
+            {
+              "slug": "vanddispenser",
+              "path": "hjem-have/kokkenudstyr/vanddispenser"
+            },
+            {
+              "slug": "vin-bar",
+              "path": "hjem-have/kokkenudstyr/vin-bar"
+            }
+          ]
+        },
+        {
+          "slug": "mobler-og-indretning",
+          "path": "hjem-have/mobler-og-indretning"
+        },
+        {
+          "slug": "rengoring",
+          "path": "hjem-have/rengoring",
+          "children": [
+            {
+              "slug": "gulvrengoring",
+              "path": "hjem-have/rengoring/gulvrengoring"
+            },
+            {
+              "slug": "handstovsuger",
+              "path": "hjem-have/rengoring/handstovsuger"
+            },
+            {
+              "slug": "industristovsuger",
+              "path": "hjem-have/rengoring/industristovsuger"
+            },
+            {
+              "slug": "ledningsfri-stovsuger",
+              "path": "hjem-have/rengoring/ledningsfri-stovsuger"
+            },
+            {
+              "slug": "robotstovsuger",
+              "path": "hjem-have/rengoring/robotstovsuger"
+            },
+            {
+              "slug": "stovsuger",
+              "path": "hjem-have/rengoring/stovsuger"
+            },
+            {
+              "slug": "tilbehor-til-stovsuger-rengoring",
+              "path": "hjem-have/rengoring/tilbehor-til-stovsuger-rengoring",
+              "children": [
+                {
+                  "slug": "mundstykker-til-stovsuger",
+                  "path": "hjem-have/rengoring/tilbehor-til-stovsuger-rengoring/mundstykker-til-stovsuger"
+                },
+                {
+                  "slug": "rengoringsmiddel-tilbehor",
+                  "path": "hjem-have/rengoring/tilbehor-til-stovsuger-rengoring/rengoringsmiddel-tilbehor"
+                },
+                {
+                  "slug": "stovsugerfilter-hepa",
+                  "path": "hjem-have/rengoring/tilbehor-til-stovsuger-rengoring/stovsugerfilter-hepa"
+                },
+                {
+                  "slug": "stovsugerposer",
+                  "path": "hjem-have/rengoring/tilbehor-til-stovsuger-rengoring/stovsugerposer"
+                },
+                {
+                  "slug": "tilbehor-til-robotstovsuger",
+                  "path": "hjem-have/rengoring/tilbehor-til-stovsuger-rengoring/tilbehor-til-robotstovsuger"
+                }
+              ]
+            },
+            {
+              "slug": "vinduesvasker",
+              "path": "hjem-have/rengoring/vinduesvasker"
+            }
+          ]
+        },
+        {
+          "slug": "robotplaneklipper",
+          "path": "hjem-have/robotplaneklipper"
+        },
+        {
+          "slug": "sengetoj",
+          "path": "hjem-have/sengetoj"
+        },
+        {
+          "slug": "sikkerhed-overvagning",
+          "path": "hjem-have/sikkerhed-overvagning",
+          "children": [
+            {
+              "slug": "bevagelsessensor",
+              "path": "hjem-have/sikkerhed-overvagning/bevagelsessensor"
+            },
+            {
+              "slug": "dorlas",
+              "path": "hjem-have/sikkerhed-overvagning/dorlas"
+            },
+            {
+              "slug": "garageportabner",
+              "path": "hjem-have/sikkerhed-overvagning/garageportabner"
+            },
+            {
+              "slug": "nogleskab",
+              "path": "hjem-have/sikkerhed-overvagning/nogleskab"
+            },
+            {
+              "slug": "overvagningskamera",
+              "path": "hjem-have/sikkerhed-overvagning/overvagningskamera"
+            },
+            {
+              "slug": "pengeskabe",
+              "path": "hjem-have/sikkerhed-overvagning/pengeskabe"
+            },
+            {
+              "slug": "personlig-alarm-overfaldsalarm",
+              "path": "hjem-have/sikkerhed-overvagning/personlig-alarm-overfaldsalarm"
+            },
+            {
+              "slug": "rfid-kort",
+              "path": "hjem-have/sikkerhed-overvagning/rfid-kort"
+            },
+            {
+              "slug": "ringeklokke",
+              "path": "hjem-have/sikkerhed-overvagning/ringeklokke"
+            },
+            {
+              "slug": "rogalarm",
+              "path": "hjem-have/sikkerhed-overvagning/rogalarm"
+            },
+            {
+              "slug": "tyverialarm",
+              "path": "hjem-have/sikkerhed-overvagning/tyverialarm"
+            }
+          ]
+        },
+        {
+          "slug": "strygejern-og-tojdampere",
+          "path": "hjem-have/strygejern-og-tojdampere",
+          "children": [
+            {
+              "slug": "fnugfjerner",
+              "path": "hjem-have/strygejern-og-tojdampere/fnugfjerner"
+            },
+            {
+              "slug": "steamer",
+              "path": "hjem-have/strygejern-og-tojdampere/steamer"
+            },
+            {
+              "slug": "strygebrat",
+              "path": "hjem-have/strygejern-og-tojdampere/strygebrat"
+            },
+            {
+              "slug": "strygejern",
+              "path": "hjem-have/strygejern-og-tojdampere/strygejern"
+            },
+            {
+              "slug": "strygepresse",
+              "path": "hjem-have/strygejern-og-tojdampere/strygepresse"
+            },
+            {
+              "slug": "symaskine",
+              "path": "hjem-have/strygejern-og-tojdampere/symaskine"
+            }
+          ]
+        },
+        {
+          "slug": "varktoj-maskiner",
+          "path": "hjem-have/varktoj-maskiner",
+          "children": [
+            {
+              "slug": "arbejdshandsker",
+              "path": "hjem-have/varktoj-maskiner/arbejdshandsker"
+            },
+            {
+              "slug": "bore-skruemaskine",
+              "path": "hjem-have/varktoj-maskiner/bore-skruemaskine"
+            },
+            {
+              "slug": "diverse-varktoj",
+              "path": "hjem-have/varktoj-maskiner/diverse-varktoj"
+            },
+            {
+              "slug": "skruetrakker",
+              "path": "hjem-have/varktoj-maskiner/skruetrakker"
+            },
+            {
+              "slug": "varktojskasse",
+              "path": "hjem-have/varktoj-maskiner/varktojskasse"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "hvidevarer",
+      "path": "hvidevarer",
+      "children": [
+        {
+          "slug": "emhatte",
+          "path": "hvidevarer/emhatte"
+        },
+        {
+          "slug": "koleskabe-fryseskabe",
+          "path": "hvidevarer/koleskabe-fryseskabe",
+          "children": [
+            {
+              "slug": "amerikanerkoleskab",
+              "path": "hvidevarer/koleskabe-fryseskabe/amerikanerkoleskab"
+            },
+            {
+              "slug": "kolefryseskab",
+              "path": "hvidevarer/koleskabe-fryseskabe/kolefryseskab"
+            },
+            {
+              "slug": "kolerum",
+              "path": "hvidevarer/koleskabe-fryseskabe/kolerum"
+            },
+            {
+              "slug": "koleskab",
+              "path": "hvidevarer/koleskabe-fryseskabe/koleskab"
+            },
+            {
+              "slug": "koletaske-og-koleboks",
+              "path": "hvidevarer/koleskabe-fryseskabe/koletaske-og-koleboks"
+            },
+            {
+              "slug": "kummefryser",
+              "path": "hvidevarer/koleskabe-fryseskabe/kummefryser"
+            },
+            {
+              "slug": "minikoleskab",
+              "path": "hvidevarer/koleskabe-fryseskabe/minikoleskab"
+            },
+            {
+              "slug": "skabsfryser",
+              "path": "hvidevarer/koleskabe-fryseskabe/skabsfryser"
+            }
+          ]
+        },
+        {
+          "slug": "opvaskemaskine",
+          "path": "hvidevarer/opvaskemaskine"
+        },
+        {
+          "slug": "ovn-komfur",
+          "path": "hvidevarer/ovn-komfur",
+          "children": [
+            {
+              "slug": "fritstaende-kogeplade",
+              "path": "hvidevarer/ovn-komfur/fritstaende-kogeplade"
+            },
+            {
+              "slug": "integreret-kogeplade",
+              "path": "hvidevarer/ovn-komfur/integreret-kogeplade"
+            },
+            {
+              "slug": "komfur",
+              "path": "hvidevarer/ovn-komfur/komfur"
+            },
+            {
+              "slug": "mikroovn",
+              "path": "hvidevarer/ovn-komfur/mikroovn"
+            },
+            {
+              "slug": "miniovn",
+              "path": "hvidevarer/ovn-komfur/miniovn"
+            },
+            {
+              "slug": "ovn",
+              "path": "hvidevarer/ovn-komfur/ovn"
+            },
+            {
+              "slug": "varmeskuffe",
+              "path": "hvidevarer/ovn-komfur/varmeskuffe"
+            }
+          ]
+        },
+        {
+          "slug": "tilbehor-til-hvidevarer",
+          "path": "hvidevarer/tilbehor-til-hvidevarer",
+          "children": [
+            {
+              "slug": "tilbehor-til-emhatte",
+              "path": "hvidevarer/tilbehor-til-hvidevarer/tilbehor-til-emhatte"
+            },
+            {
+              "slug": "tilbehor-til-koleskab-fryser",
+              "path": "hvidevarer/tilbehor-til-hvidevarer/tilbehor-til-koleskab-fryser"
+            },
+            {
+              "slug": "tilbehor-til-opvaskemaskine",
+              "path": "hvidevarer/tilbehor-til-hvidevarer/tilbehor-til-opvaskemaskine"
+            },
+            {
+              "slug": "tilbehor-til-ovn-komfur",
+              "path": "hvidevarer/tilbehor-til-hvidevarer/tilbehor-til-ovn-komfur"
+            },
+            {
+              "slug": "tilbehor-til-vaskemaskine-torretumbler",
+              "path": "hvidevarer/tilbehor-til-hvidevarer/tilbehor-til-vaskemaskine-torretumbler"
+            }
+          ]
+        },
+        {
+          "slug": "vask-tor",
+          "path": "hvidevarer/vask-tor",
+          "children": [
+            {
+              "slug": "kombineret-vaskemaskine-torretumbler",
+              "path": "hvidevarer/vask-tor/kombineret-vaskemaskine-torretumbler"
+            },
+            {
+              "slug": "torretumbler-torreskab",
+              "path": "hvidevarer/vask-tor/torretumbler-torreskab",
+              "children": [
+                {
+                  "slug": "dampskab",
+                  "path": "hvidevarer/vask-tor/torretumbler-torreskab/dampskab"
+                },
+                {
+                  "slug": "torreskab",
+                  "path": "hvidevarer/vask-tor/torretumbler-torreskab/torreskab"
+                },
+                {
+                  "slug": "torrestativ",
+                  "path": "hvidevarer/vask-tor/torretumbler-torreskab/torrestativ"
+                },
+                {
+                  "slug": "torretumbler",
+                  "path": "hvidevarer/vask-tor/torretumbler-torreskab/torretumbler"
+                }
+              ]
+            },
+            {
+              "slug": "vaskemaskine",
+              "path": "hvidevarer/vask-tor/vaskemaskine"
+            }
+          ]
+        },
+        {
+          "slug": "vinkoler-vinkoleskab",
+          "path": "hvidevarer/vinkoler-vinkoleskab"
+        }
+      ]
+    },
+    {
+      "slug": "mobil-tablet-smartwatch",
+      "path": "mobil-tablet-smartwatch",
+      "children": [
+        {
+          "slug": "ai-briller",
+          "path": "mobil-tablet-smartwatch/ai-briller"
+        },
+        {
+          "slug": "brugt-mobiltelefon",
+          "path": "mobil-tablet-smartwatch/brugt-mobiltelefon"
+        },
+        {
+          "slug": "e-bogslaser",
+          "path": "mobil-tablet-smartwatch/e-bogslaser"
+        },
+        {
+          "slug": "fastnettelefon",
+          "path": "mobil-tablet-smartwatch/fastnettelefon"
+        },
+        {
+          "slug": "mobiltelefon",
+          "path": "mobil-tablet-smartwatch/mobiltelefon"
+        },
+        {
+          "slug": "mobiltilbehor",
+          "path": "mobil-tablet-smartwatch/mobiltilbehor",
+          "children": [
+            {
+              "slug": "diverse-mobiltilbehor",
+              "path": "mobil-tablet-smartwatch/mobiltilbehor/diverse-mobiltilbehor"
+            },
+            {
+              "slug": "gps-bluetooth-tracker",
+              "path": "mobil-tablet-smartwatch/mobiltilbehor/gps-bluetooth-tracker"
+            },
+            {
+              "slug": "handfri-headset",
+              "path": "mobil-tablet-smartwatch/mobiltilbehor/handfri-headset"
+            },
+            {
+              "slug": "mobilcovers",
+              "path": "mobil-tablet-smartwatch/mobiltilbehor/mobilcovers"
+            },
+            {
+              "slug": "mobilholdere",
+              "path": "mobil-tablet-smartwatch/mobiltilbehor/mobilholdere"
+            },
+            {
+              "slug": "mobiltaske",
+              "path": "mobil-tablet-smartwatch/mobiltilbehor/mobiltaske"
+            },
+            {
+              "slug": "powerbank",
+              "path": "mobil-tablet-smartwatch/mobiltilbehor/powerbank"
+            },
+            {
+              "slug": "selfiestang",
+              "path": "mobil-tablet-smartwatch/mobiltilbehor/selfiestang"
+            },
+            {
+              "slug": "skarmbeskyttelse-til-mobil",
+              "path": "mobil-tablet-smartwatch/mobiltilbehor/skarmbeskyttelse-til-mobil"
+            }
+          ]
+        },
+        {
+          "slug": "smart-glasses",
+          "path": "mobil-tablet-smartwatch/smart-glasses"
+        },
+        {
+          "slug": "smart-ring",
+          "path": "mobil-tablet-smartwatch/smart-ring"
+        },
+        {
+          "slug": "smartwatch",
+          "path": "mobil-tablet-smartwatch/smartwatch"
+        },
+        {
+          "slug": "tablet",
+          "path": "mobil-tablet-smartwatch/tablet"
+        },
+        {
+          "slug": "tablet-tilbehor",
+          "path": "mobil-tablet-smartwatch/tablet-tilbehor",
+          "children": [
+            {
+              "slug": "covers-etuier-til-tablet",
+              "path": "mobil-tablet-smartwatch/tablet-tilbehor/covers-etuier-til-tablet"
+            },
+            {
+              "slug": "skarmbeskyttelse-til-tablet",
+              "path": "mobil-tablet-smartwatch/tablet-tilbehor/skarmbeskyttelse-til-tablet"
+            },
+            {
+              "slug": "tablet-stylus-pen",
+              "path": "mobil-tablet-smartwatch/tablet-tilbehor/tablet-stylus-pen"
+            },
+            {
+              "slug": "tabletholdere-standere",
+              "path": "mobil-tablet-smartwatch/tablet-tilbehor/tabletholdere-standere"
+            },
+            {
+              "slug": "tastatur-til-tablet",
+              "path": "mobil-tablet-smartwatch/tablet-tilbehor/tastatur-til-tablet"
+            }
+          ]
+        },
+        {
+          "slug": "urremme-og-tilbehor",
+          "path": "mobil-tablet-smartwatch/urremme-og-tilbehor"
+        }
+      ]
+    },
+    {
+      "slug": "outlet",
+      "path": "outlet"
+    },
+    {
+      "slug": "personlig-pleje-skonhed-velvare",
+      "path": "personlig-pleje-skonhed-velvare",
+      "children": [
+        {
+          "slug": "babyudstyr",
+          "path": "personlig-pleje-skonhed-velvare/babyudstyr",
+          "children": [
+            {
+              "slug": "andre-babyprodukter",
+              "path": "personlig-pleje-skonhed-velvare/babyudstyr/andre-babyprodukter"
+            },
+            {
+              "slug": "babyalarm",
+              "path": "personlig-pleje-skonhed-velvare/babyudstyr/babyalarm"
+            },
+            {
+              "slug": "babylegetoj",
+              "path": "personlig-pleje-skonhed-velvare/babyudstyr/babylegetoj"
+            },
+            {
+              "slug": "brystpumpe",
+              "path": "personlig-pleje-skonhed-velvare/babyudstyr/brystpumpe"
+            },
+            {
+              "slug": "tilberedning-af-babymad",
+              "path": "personlig-pleje-skonhed-velvare/babyudstyr/tilberedning-af-babymad"
+            }
+          ]
+        },
+        {
+          "slug": "barbering-harfjerning",
+          "path": "personlig-pleje-skonhed-velvare/barbering-harfjerning",
+          "children": [
+            {
+              "slug": "barbermaskine",
+              "path": "personlig-pleje-skonhed-velvare/barbering-harfjerning/barbermaskine"
+            },
+            {
+              "slug": "barberskraber-og-barberblade",
+              "path": "personlig-pleje-skonhed-velvare/barbering-harfjerning/barberskraber-og-barberblade"
+            },
+            {
+              "slug": "barberskum",
+              "path": "personlig-pleje-skonhed-velvare/barbering-harfjerning/barberskum"
+            },
+            {
+              "slug": "epilator",
+              "path": "personlig-pleje-skonhed-velvare/barbering-harfjerning/epilator"
+            },
+            {
+              "slug": "harfjerner-ipl",
+              "path": "personlig-pleje-skonhed-velvare/barbering-harfjerning/harfjerner-ipl"
+            },
+            {
+              "slug": "harklipper",
+              "path": "personlig-pleje-skonhed-velvare/barbering-harfjerning/harklipper"
+            },
+            {
+              "slug": "kropstrimmer",
+              "path": "personlig-pleje-skonhed-velvare/barbering-harfjerning/kropstrimmer"
+            },
+            {
+              "slug": "ladyshaver",
+              "path": "personlig-pleje-skonhed-velvare/barbering-harfjerning/ladyshaver"
+            },
+            {
+              "slug": "ore-og-naseharstrimmer",
+              "path": "personlig-pleje-skonhed-velvare/barbering-harfjerning/ore-og-naseharstrimmer"
+            },
+            {
+              "slug": "skagtrimmer",
+              "path": "personlig-pleje-skonhed-velvare/barbering-harfjerning/skagtrimmer"
+            }
+          ]
+        },
+        {
+          "slug": "harpleje-styling",
+          "path": "personlig-pleje-skonhed-velvare/harpleje-styling",
+          "children": [
+            {
+              "slug": "glattejern",
+              "path": "personlig-pleje-skonhed-velvare/harpleje-styling/glattejern"
+            },
+            {
+              "slug": "harborste",
+              "path": "personlig-pleje-skonhed-velvare/harpleje-styling/harborste"
+            },
+            {
+              "slug": "hartorrer",
+              "path": "personlig-pleje-skonhed-velvare/harpleje-styling/hartorrer"
+            },
+            {
+              "slug": "krollejern",
+              "path": "personlig-pleje-skonhed-velvare/harpleje-styling/krollejern"
+            },
+            {
+              "slug": "multistyler-glattejern-og-krolletang-i-et",
+              "path": "personlig-pleje-skonhed-velvare/harpleje-styling/multistyler-glattejern-og-krolletang-i-et"
+            },
+            {
+              "slug": "shampoo-balsam",
+              "path": "personlig-pleje-skonhed-velvare/harpleje-styling/shampoo-balsam"
+            },
+            {
+              "slug": "tilbehor-til-harpleje-styling",
+              "path": "personlig-pleje-skonhed-velvare/harpleje-styling/tilbehor-til-harpleje-styling"
+            }
+          ]
+        },
+        {
+          "slug": "helse-pleje",
+          "path": "personlig-pleje-skonhed-velvare/helse-pleje",
+          "children": [
+            {
+              "slug": "alkometer",
+              "path": "personlig-pleje-skonhed-velvare/helse-pleje/alkometer"
+            },
+            {
+              "slug": "andre-sundheds-og-behandlingsprodukter",
+              "path": "personlig-pleje-skonhed-velvare/helse-pleje/andre-sundheds-og-behandlingsprodukter"
+            },
+            {
+              "slug": "badevagt",
+              "path": "personlig-pleje-skonhed-velvare/helse-pleje/badevagt"
+            },
+            {
+              "slug": "febertermometer",
+              "path": "personlig-pleje-skonhed-velvare/helse-pleje/febertermometer"
+            },
+            {
+              "slug": "lysterapilampe",
+              "path": "personlig-pleje-skonhed-velvare/helse-pleje/lysterapilampe"
+            },
+            {
+              "slug": "mundbind",
+              "path": "personlig-pleje-skonhed-velvare/helse-pleje/mundbind"
+            },
+            {
+              "slug": "muskelbehandling",
+              "path": "personlig-pleje-skonhed-velvare/helse-pleje/muskelbehandling"
+            }
+          ]
+        },
+        {
+          "slug": "led-masker-og-beauty-tech",
+          "path": "personlig-pleje-skonhed-velvare/led-masker-og-beauty-tech",
+          "children": [
+            {
+              "slug": "beauty-tech",
+              "path": "personlig-pleje-skonhed-velvare/led-masker-og-beauty-tech/beauty-tech"
+            },
+            {
+              "slug": "led-maske",
+              "path": "personlig-pleje-skonhed-velvare/led-masker-og-beauty-tech/led-maske"
+            },
+            {
+              "slug": "make-up",
+              "path": "personlig-pleje-skonhed-velvare/led-masker-og-beauty-tech/make-up"
+            },
+            {
+              "slug": "makeup-spejl",
+              "path": "personlig-pleje-skonhed-velvare/led-masker-og-beauty-tech/makeup-spejl"
+            },
+            {
+              "slug": "manicure-pedicure",
+              "path": "personlig-pleje-skonhed-velvare/led-masker-og-beauty-tech/manicure-pedicure"
+            },
+            {
+              "slug": "smykkeskrin",
+              "path": "personlig-pleje-skonhed-velvare/led-masker-og-beauty-tech/smykkeskrin"
+            }
+          ]
+        },
+        {
+          "slug": "massage-velvare",
+          "path": "personlig-pleje-skonhed-velvare/massage-velvare",
+          "children": [
+            {
+              "slug": "fodpleje",
+              "path": "personlig-pleje-skonhed-velvare/massage-velvare/fodpleje"
+            },
+            {
+              "slug": "massage",
+              "path": "personlig-pleje-skonhed-velvare/massage-velvare/massage"
+            },
+            {
+              "slug": "massagepistol",
+              "path": "personlig-pleje-skonhed-velvare/massage-velvare/massagepistol"
+            },
+            {
+              "slug": "massagestol",
+              "path": "personlig-pleje-skonhed-velvare/massage-velvare/massagestol"
+            },
+            {
+              "slug": "opvarmet-toj",
+              "path": "personlig-pleje-skonhed-velvare/massage-velvare/opvarmet-toj"
+            },
+            {
+              "slug": "sauna",
+              "path": "personlig-pleje-skonhed-velvare/massage-velvare/sauna"
+            },
+            {
+              "slug": "sovemaske",
+              "path": "personlig-pleje-skonhed-velvare/massage-velvare/sovemaske"
+            },
+            {
+              "slug": "varmepude",
+              "path": "personlig-pleje-skonhed-velvare/massage-velvare/varmepude"
+            },
+            {
+              "slug": "varmetappe",
+              "path": "personlig-pleje-skonhed-velvare/massage-velvare/varmetappe"
+            }
+          ]
+        },
+        {
+          "slug": "modetilbehor",
+          "path": "personlig-pleje-skonhed-velvare/modetilbehor",
+          "children": [
+            {
+              "slug": "armbandsur",
+              "path": "personlig-pleje-skonhed-velvare/modetilbehor/armbandsur"
+            },
+            {
+              "slug": "punge",
+              "path": "personlig-pleje-skonhed-velvare/modetilbehor/punge"
+            },
+            {
+              "slug": "solbriller",
+              "path": "personlig-pleje-skonhed-velvare/modetilbehor/solbriller"
+            },
+            {
+              "slug": "toj",
+              "path": "personlig-pleje-skonhed-velvare/modetilbehor/toj"
+            }
+          ]
+        },
+        {
+          "slug": "mund-tandpleje",
+          "path": "personlig-pleje-skonhed-velvare/mund-tandpleje",
+          "children": [
+            {
+              "slug": "elektrisk-tandborste",
+              "path": "personlig-pleje-skonhed-velvare/mund-tandpleje/elektrisk-tandborste"
+            },
+            {
+              "slug": "tandborste",
+              "path": "personlig-pleje-skonhed-velvare/mund-tandpleje/tandborste"
+            },
+            {
+              "slug": "tandborstehoveder",
+              "path": "personlig-pleje-skonhed-velvare/mund-tandpleje/tandborstehoveder"
+            },
+            {
+              "slug": "tandpasta",
+              "path": "personlig-pleje-skonhed-velvare/mund-tandpleje/tandpasta"
+            },
+            {
+              "slug": "tungeskraber",
+              "path": "personlig-pleje-skonhed-velvare/mund-tandpleje/tungeskraber"
+            },
+            {
+              "slug": "water-flosser",
+              "path": "personlig-pleje-skonhed-velvare/mund-tandpleje/water-flosser"
+            }
+          ]
+        },
+        {
+          "slug": "sexlegetoj",
+          "path": "personlig-pleje-skonhed-velvare/sexlegetoj"
+        }
+      ]
+    },
+    {
+      "slug": "services-tilbehor",
+      "path": "services-tilbehor",
+      "children": [
+        {
+          "slug": "batterier-opladning",
+          "path": "services-tilbehor/batterier-opladning",
+          "children": [
+            {
+              "slug": "batterier",
+              "path": "services-tilbehor/batterier-opladning/batterier"
+            },
+            {
+              "slug": "batterilader",
+              "path": "services-tilbehor/batterier-opladning/batterilader"
+            },
+            {
+              "slug": "oplader",
+              "path": "services-tilbehor/batterier-opladning/oplader"
+            }
+          ]
+        },
+        {
+          "slug": "diverse-tilbehor",
+          "path": "services-tilbehor/diverse-tilbehor"
+        },
+        {
+          "slug": "gavekort",
+          "path": "services-tilbehor/gavekort"
+        },
+        {
+          "slug": "kabler-adaptere",
+          "path": "services-tilbehor/kabler-adaptere",
+          "children": [
+            {
+              "slug": "antennekabel",
+              "path": "services-tilbehor/kabler-adaptere/antennekabel"
+            },
+            {
+              "slug": "hdmi-kabel",
+              "path": "services-tilbehor/kabler-adaptere/hdmi-kabel"
+            },
+            {
+              "slug": "kabel-organisering-kabelskinner",
+              "path": "services-tilbehor/kabler-adaptere/kabel-organisering-kabelskinner"
+            },
+            {
+              "slug": "kabeladapter",
+              "path": "services-tilbehor/kabler-adaptere/kabeladapter"
+            },
+            {
+              "slug": "lightning-kabel",
+              "path": "services-tilbehor/kabler-adaptere/lightning-kabel"
+            },
+            {
+              "slug": "lydkabler",
+              "path": "services-tilbehor/kabler-adaptere/lydkabler"
+            },
+            {
+              "slug": "netvarkskabel",
+              "path": "services-tilbehor/kabler-adaptere/netvarkskabel"
+            },
+            {
+              "slug": "stromkabel",
+              "path": "services-tilbehor/kabler-adaptere/stromkabel"
+            },
+            {
+              "slug": "usb-hub",
+              "path": "services-tilbehor/kabler-adaptere/usb-hub"
+            },
+            {
+              "slug": "usb-kabel",
+              "path": "services-tilbehor/kabler-adaptere/usb-kabel"
+            },
+            {
+              "slug": "videokabler-scart-vga",
+              "path": "services-tilbehor/kabler-adaptere/videokabler-scart-vga"
+            }
+          ]
+        },
+        {
+          "slug": "services",
+          "path": "services-tilbehor/services",
+          "children": [
+            {
+              "slug": "services-outlet",
+              "path": "services-tilbehor/services/services-outlet"
+            },
+            {
+              "slug": "services-sport-hobby",
+              "path": "services-tilbehor/services/services-sport-hobby"
+            },
+            {
+              "slug": "services-sundhed-skonhed",
+              "path": "services-tilbehor/services/services-sundhed-skonhed"
+            },
+            {
+              "slug": "services-til-computer-kontor",
+              "path": "services-tilbehor/services/services-til-computer-kontor"
+            },
+            {
+              "slug": "services-til-gaming",
+              "path": "services-tilbehor/services/services-til-gaming"
+            },
+            {
+              "slug": "services-til-hjem-have",
+              "path": "services-tilbehor/services/services-til-hjem-have"
+            },
+            {
+              "slug": "services-til-hvidevarer",
+              "path": "services-tilbehor/services/services-til-hvidevarer"
+            },
+            {
+              "slug": "services-til-mobil-tablet-smartwatch",
+              "path": "services-tilbehor/services/services-til-mobil-tablet-smartwatch"
+            },
+            {
+              "slug": "services-til-tv-lyd-billede",
+              "path": "services-tilbehor/services/services-til-tv-lyd-billede"
+            }
+          ]
+        },
+        {
+          "slug": "usb-stick-hukommelseskort-kortlasere",
+          "path": "services-tilbehor/usb-stick-hukommelseskort-kortlasere",
+          "children": [
+            {
+              "slug": "hukommelseskort",
+              "path": "services-tilbehor/usb-stick-hukommelseskort-kortlasere/hukommelseskort"
+            },
+            {
+              "slug": "hukommelseskortlaser",
+              "path": "services-tilbehor/usb-stick-hukommelseskort-kortlasere/hukommelseskortlaser"
+            },
+            {
+              "slug": "usb-stick",
+              "path": "services-tilbehor/usb-stick-hukommelseskort-kortlasere/usb-stick"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "sport-fritid-hobby",
+      "path": "sport-fritid-hobby",
+      "children": [
+        {
+          "slug": "bil-motorcykel",
+          "path": "sport-fritid-hobby/bil-motorcykel",
+          "children": [
+            {
+              "slug": "bilkamera",
+              "path": "sport-fritid-hobby/bil-motorcykel/bilkamera"
+            },
+            {
+              "slug": "elbil-opladning-og-tilbehor-til-elbil",
+              "path": "sport-fritid-hobby/bil-motorcykel/elbil-opladning-og-tilbehor-til-elbil"
+            },
+            {
+              "slug": "gps",
+              "path": "sport-fritid-hobby/bil-motorcykel/gps"
+            },
+            {
+              "slug": "isskraber",
+              "path": "sport-fritid-hobby/bil-motorcykel/isskraber"
+            },
+            {
+              "slug": "parkeringsskive",
+              "path": "sport-fritid-hobby/bil-motorcykel/parkeringsskive"
+            },
+            {
+              "slug": "trafikalarm",
+              "path": "sport-fritid-hobby/bil-motorcykel/trafikalarm"
+            }
+          ]
+        },
+        {
+          "slug": "camping-friluftsliv",
+          "path": "sport-fritid-hobby/camping-friluftsliv"
+        },
+        {
+          "slug": "droner-tilbehor",
+          "path": "sport-fritid-hobby/droner-tilbehor",
+          "children": [
+            {
+              "slug": "drone",
+              "path": "sport-fritid-hobby/droner-tilbehor/drone"
+            },
+            {
+              "slug": "tilbehor-til-drone",
+              "path": "sport-fritid-hobby/droner-tilbehor/tilbehor-til-drone"
+            }
+          ]
+        },
+        {
+          "slug": "elcykler-transportmidler",
+          "path": "sport-fritid-hobby/elcykler-transportmidler",
+          "children": [
+            {
+              "slug": "el-lobehjul",
+              "path": "sport-fritid-hobby/elcykler-transportmidler/el-lobehjul"
+            },
+            {
+              "slug": "elcykel",
+              "path": "sport-fritid-hobby/elcykler-transportmidler/elcykel"
+            },
+            {
+              "slug": "tilbehor-til-el-lobehjul",
+              "path": "sport-fritid-hobby/elcykler-transportmidler/tilbehor-til-el-lobehjul"
+            },
+            {
+              "slug": "tilbehor-til-elcykel",
+              "path": "sport-fritid-hobby/elcykler-transportmidler/tilbehor-til-elcykel"
+            }
+          ]
+        },
+        {
+          "slug": "kaledyr",
+          "path": "sport-fritid-hobby/kaledyr"
+        },
+        {
+          "slug": "kamera-foto",
+          "path": "sport-fritid-hobby/kamera-foto",
+          "children": [
+            {
+              "slug": "digital-fotoramme",
+              "path": "sport-fritid-hobby/kamera-foto/digital-fotoramme"
+            },
+            {
+              "slug": "green-screen",
+              "path": "sport-fritid-hobby/kamera-foto/green-screen"
+            },
+            {
+              "slug": "kamera",
+              "path": "sport-fritid-hobby/kamera-foto/kamera",
+              "children": [
+                {
+                  "slug": "actionkamera",
+                  "path": "sport-fritid-hobby/kamera-foto/kamera/actionkamera"
+                },
+                {
+                  "slug": "analog-kamera",
+                  "path": "sport-fritid-hobby/kamera-foto/kamera/analog-kamera"
+                },
+                {
+                  "slug": "digitalkamera",
+                  "path": "sport-fritid-hobby/kamera-foto/kamera/digitalkamera"
+                },
+                {
+                  "slug": "minikamera",
+                  "path": "sport-fritid-hobby/kamera-foto/kamera/minikamera"
+                },
+                {
+                  "slug": "systemkamera-slr",
+                  "path": "sport-fritid-hobby/kamera-foto/kamera/systemkamera-slr"
+                },
+                {
+                  "slug": "vildtkamera",
+                  "path": "sport-fritid-hobby/kamera-foto/kamera/vildtkamera"
+                }
+              ]
+            },
+            {
+              "slug": "kameratilbehor",
+              "path": "sport-fritid-hobby/kamera-foto/kameratilbehor",
+              "children": [
+                {
+                  "slug": "blitz-til-kamera",
+                  "path": "sport-fritid-hobby/kamera-foto/kameratilbehor/blitz-til-kamera"
+                },
+                {
+                  "slug": "direktbilledfilm",
+                  "path": "sport-fritid-hobby/kamera-foto/kameratilbehor/direktbilledfilm"
+                },
+                {
+                  "slug": "diverse-kameratilbehor",
+                  "path": "sport-fritid-hobby/kamera-foto/kameratilbehor/diverse-kameratilbehor"
+                },
+                {
+                  "slug": "kamerabatteri",
+                  "path": "sport-fritid-hobby/kamera-foto/kameratilbehor/kamerabatteri"
+                },
+                {
+                  "slug": "kamerafilter",
+                  "path": "sport-fritid-hobby/kamera-foto/kameratilbehor/kamerafilter"
+                },
+                {
+                  "slug": "kameragreb",
+                  "path": "sport-fritid-hobby/kamera-foto/kameratilbehor/kameragreb"
+                },
+                {
+                  "slug": "kamerarem",
+                  "path": "sport-fritid-hobby/kamera-foto/kameratilbehor/kamerarem"
+                },
+                {
+                  "slug": "kamerastativ-tripod",
+                  "path": "sport-fritid-hobby/kamera-foto/kameratilbehor/kamerastativ-tripod"
+                },
+                {
+                  "slug": "kamerataske",
+                  "path": "sport-fritid-hobby/kamera-foto/kameratilbehor/kamerataske"
+                },
+                {
+                  "slug": "objektiv",
+                  "path": "sport-fritid-hobby/kamera-foto/kameratilbehor/objektiv"
+                },
+                {
+                  "slug": "tilbehor-til-actionkamera",
+                  "path": "sport-fritid-hobby/kamera-foto/kameratilbehor/tilbehor-til-actionkamera"
+                },
+                {
+                  "slug": "videolys",
+                  "path": "sport-fritid-hobby/kamera-foto/kameratilbehor/videolys"
+                }
+              ]
+            },
+            {
+              "slug": "videokamera",
+              "path": "sport-fritid-hobby/kamera-foto/videokamera"
+            }
+          ]
+        },
+        {
+          "slug": "kikkert",
+          "path": "sport-fritid-hobby/kikkert"
+        },
+        {
+          "slug": "legetoj",
+          "path": "sport-fritid-hobby/legetoj",
+          "children": [
+            {
+              "slug": "andet-legetoj",
+              "path": "sport-fritid-hobby/legetoj/andet-legetoj"
+            },
+            {
+              "slug": "bratspil",
+              "path": "sport-fritid-hobby/legetoj/bratspil"
+            },
+            {
+              "slug": "dukker-og-tilbehor",
+              "path": "sport-fritid-hobby/legetoj/dukker-og-tilbehor"
+            },
+            {
+              "slug": "festartikler",
+              "path": "sport-fritid-hobby/legetoj/festartikler"
+            },
+            {
+              "slug": "fjernstyrede-koretojer-tilbehor",
+              "path": "sport-fritid-hobby/legetoj/fjernstyrede-koretojer-tilbehor",
+              "children": [
+                {
+                  "slug": "fjernstyrede-bade",
+                  "path": "sport-fritid-hobby/legetoj/fjernstyrede-koretojer-tilbehor/fjernstyrede-bade"
+                },
+                {
+                  "slug": "fjernstyrede-biler-og-lastbiler",
+                  "path": "sport-fritid-hobby/legetoj/fjernstyrede-koretojer-tilbehor/fjernstyrede-biler-og-lastbiler"
+                },
+                {
+                  "slug": "fjernstyrede-fly-og-helikoptere",
+                  "path": "sport-fritid-hobby/legetoj/fjernstyrede-koretojer-tilbehor/fjernstyrede-fly-og-helikoptere"
+                },
+                {
+                  "slug": "reservedele-til-fjernstyrede-biler-og-bade",
+                  "path": "sport-fritid-hobby/legetoj/fjernstyrede-koretojer-tilbehor/reservedele-til-fjernstyrede-biler-og-bade"
+                }
+              ]
+            },
+            {
+              "slug": "halloween",
+              "path": "sport-fritid-hobby/legetoj/halloween"
+            },
+            {
+              "slug": "legetojskoretojer",
+              "path": "sport-fritid-hobby/legetoj/legetojskoretojer"
+            },
+            {
+              "slug": "puslespil",
+              "path": "sport-fritid-hobby/legetoj/puslespil"
+            },
+            {
+              "slug": "trampolin",
+              "path": "sport-fritid-hobby/legetoj/trampolin"
+            },
+            {
+              "slug": "vandleg",
+              "path": "sport-fritid-hobby/legetoj/vandleg"
+            }
+          ]
+        },
+        {
+          "slug": "lego",
+          "path": "sport-fritid-hobby/lego",
+          "children": [
+            {
+              "slug": "andre-lego-sat",
+              "path": "sport-fritid-hobby/lego/andre-lego-sat"
+            },
+            {
+              "slug": "duplo",
+              "path": "sport-fritid-hobby/lego/duplo"
+            },
+            {
+              "slug": "lego-animal-crossing",
+              "path": "sport-fritid-hobby/lego/lego-animal-crossing"
+            },
+            {
+              "slug": "lego-architecture",
+              "path": "sport-fritid-hobby/lego/lego-architecture"
+            },
+            {
+              "slug": "lego-art",
+              "path": "sport-fritid-hobby/lego/lego-art"
+            },
+            {
+              "slug": "lego-blomster",
+              "path": "sport-fritid-hobby/lego/lego-blomster"
+            },
+            {
+              "slug": "lego-city",
+              "path": "sport-fritid-hobby/lego/lego-city"
+            },
+            {
+              "slug": "lego-classic",
+              "path": "sport-fritid-hobby/lego/lego-classic"
+            },
+            {
+              "slug": "lego-creator",
+              "path": "sport-fritid-hobby/lego/lego-creator"
+            },
+            {
+              "slug": "lego-disney",
+              "path": "sport-fritid-hobby/lego/lego-disney"
+            },
+            {
+              "slug": "lego-dreamzzz",
+              "path": "sport-fritid-hobby/lego/lego-dreamzzz"
+            },
+            {
+              "slug": "lego-editions",
+              "path": "sport-fritid-hobby/lego/lego-editions"
+            },
+            {
+              "slug": "lego-fortnite",
+              "path": "sport-fritid-hobby/lego/lego-fortnite"
+            },
+            {
+              "slug": "lego-friends",
+              "path": "sport-fritid-hobby/lego/lego-friends"
+            },
+            {
+              "slug": "lego-gabbys-dukkehus",
+              "path": "sport-fritid-hobby/lego/lego-gabbys-dukkehus"
+            },
+            {
+              "slug": "lego-harry-potter",
+              "path": "sport-fritid-hobby/lego/lego-harry-potter"
+            },
+            {
+              "slug": "lego-icons",
+              "path": "sport-fritid-hobby/lego/lego-icons"
+            },
+            {
+              "slug": "lego-jurassic-world-park",
+              "path": "sport-fritid-hobby/lego/lego-jurassic-world-park"
+            },
+            {
+              "slug": "lego-minecraft",
+              "path": "sport-fritid-hobby/lego/lego-minecraft"
+            },
+            {
+              "slug": "lego-ninjago",
+              "path": "sport-fritid-hobby/lego/lego-ninjago"
+            },
+            {
+              "slug": "lego-one-piece",
+              "path": "sport-fritid-hobby/lego/lego-one-piece"
+            },
+            {
+              "slug": "lego-pokemon",
+              "path": "sport-fritid-hobby/lego/lego-pokemon"
+            },
+            {
+              "slug": "lego-sonic-the-hedgehog",
+              "path": "sport-fritid-hobby/lego/lego-sonic-the-hedgehog"
+            },
+            {
+              "slug": "lego-speed-champions",
+              "path": "sport-fritid-hobby/lego/lego-speed-champions"
+            },
+            {
+              "slug": "lego-star-wars",
+              "path": "sport-fritid-hobby/lego/lego-star-wars"
+            },
+            {
+              "slug": "lego-super-heroes",
+              "path": "sport-fritid-hobby/lego/lego-super-heroes"
+            },
+            {
+              "slug": "lego-super-mario",
+              "path": "sport-fritid-hobby/lego/lego-super-mario"
+            },
+            {
+              "slug": "lego-technic",
+              "path": "sport-fritid-hobby/lego/lego-technic"
+            },
+            {
+              "slug": "lego-tilbehor-og-merch",
+              "path": "sport-fritid-hobby/lego/lego-tilbehor-og-merch",
+              "children": [
+                {
+                  "slug": "lego-diverse-tilbehor",
+                  "path": "sport-fritid-hobby/lego/lego-tilbehor-og-merch/lego-diverse-tilbehor"
+                },
+                {
+                  "slug": "lego-hylder-og-knager",
+                  "path": "sport-fritid-hobby/lego/lego-tilbehor-og-merch/lego-hylder-og-knager"
+                },
+                {
+                  "slug": "lego-krus",
+                  "path": "sport-fritid-hobby/lego/lego-tilbehor-og-merch/lego-krus"
+                },
+                {
+                  "slug": "lego-montre",
+                  "path": "sport-fritid-hobby/lego/lego-tilbehor-og-merch/lego-montre"
+                },
+                {
+                  "slug": "lego-noglering",
+                  "path": "sport-fritid-hobby/lego/lego-tilbehor-og-merch/lego-noglering"
+                },
+                {
+                  "slug": "lego-opbevaring",
+                  "path": "sport-fritid-hobby/lego/lego-tilbehor-og-merch/lego-opbevaring"
+                },
+                {
+                  "slug": "lego-tasker-og-rygsakke",
+                  "path": "sport-fritid-hobby/lego/lego-tilbehor-og-merch/lego-tasker-og-rygsakke"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "slug": "rejsetilbehor",
+          "path": "sport-fritid-hobby/rejsetilbehor"
+        },
+        {
+          "slug": "samleobjekter-merchandise",
+          "path": "sport-fritid-hobby/samleobjekter-merchandise",
+          "children": [
+            {
+              "slug": "funko-pop",
+              "path": "sport-fritid-hobby/samleobjekter-merchandise/funko-pop"
+            },
+            {
+              "slug": "merch",
+              "path": "sport-fritid-hobby/samleobjekter-merchandise/merch"
+            },
+            {
+              "slug": "plushies",
+              "path": "sport-fritid-hobby/samleobjekter-merchandise/plushies"
+            },
+            {
+              "slug": "samlefigurer",
+              "path": "sport-fritid-hobby/samleobjekter-merchandise/samlefigurer"
+            },
+            {
+              "slug": "samlekort",
+              "path": "sport-fritid-hobby/samleobjekter-merchandise/samlekort"
+            }
+          ]
+        },
+        {
+          "slug": "sport-fitness",
+          "path": "sport-fritid-hobby/sport-fitness",
+          "children": [
+            {
+              "slug": "aktivitetsur",
+              "path": "sport-fritid-hobby/sport-fitness/aktivitetsur"
+            },
+            {
+              "slug": "boldsport",
+              "path": "sport-fritid-hobby/sport-fitness/boldsport"
+            },
+            {
+              "slug": "cykling",
+              "path": "sport-fritid-hobby/sport-fitness/cykling"
+            },
+            {
+              "slug": "dart-dartskiver-og-dartpile",
+              "path": "sport-fritid-hobby/sport-fitness/dart-dartskiver-og-dartpile"
+            },
+            {
+              "slug": "fitnessudstyr-tilbehor",
+              "path": "sport-fritid-hobby/sport-fitness/fitnessudstyr-tilbehor",
+              "children": [
+                {
+                  "slug": "andet-sports-og-traningsudstyr",
+                  "path": "sport-fritid-hobby/sport-fitness/fitnessudstyr-tilbehor/andet-sports-og-traningsudstyr"
+                },
+                {
+                  "slug": "balancebrat",
+                  "path": "sport-fritid-hobby/sport-fitness/fitnessudstyr-tilbehor/balancebrat"
+                },
+                {
+                  "slug": "boksehandsker",
+                  "path": "sport-fritid-hobby/sport-fitness/fitnessudstyr-tilbehor/boksehandsker"
+                },
+                {
+                  "slug": "boksesak",
+                  "path": "sport-fritid-hobby/sport-fitness/fitnessudstyr-tilbehor/boksesak"
+                },
+                {
+                  "slug": "chin-up-bar-pull-up-bar",
+                  "path": "sport-fritid-hobby/sport-fitness/fitnessudstyr-tilbehor/chin-up-bar-pull-up-bar"
+                },
+                {
+                  "slug": "foam-roller",
+                  "path": "sport-fritid-hobby/sport-fitness/fitnessudstyr-tilbehor/foam-roller"
+                },
+                {
+                  "slug": "handvagte",
+                  "path": "sport-fritid-hobby/sport-fitness/fitnessudstyr-tilbehor/handvagte"
+                },
+                {
+                  "slug": "kettlebell",
+                  "path": "sport-fritid-hobby/sport-fitness/fitnessudstyr-tilbehor/kettlebell"
+                },
+                {
+                  "slug": "pulsmaler",
+                  "path": "sport-fritid-hobby/sport-fitness/fitnessudstyr-tilbehor/pulsmaler"
+                },
+                {
+                  "slug": "stepbrat",
+                  "path": "sport-fritid-hobby/sport-fitness/fitnessudstyr-tilbehor/stepbrat"
+                },
+                {
+                  "slug": "traningsbank",
+                  "path": "sport-fritid-hobby/sport-fitness/fitnessudstyr-tilbehor/traningsbank"
+                },
+                {
+                  "slug": "traningselastik-traningsband",
+                  "path": "sport-fritid-hobby/sport-fitness/fitnessudstyr-tilbehor/traningselastik-traningsband"
+                },
+                {
+                  "slug": "vagtskiver",
+                  "path": "sport-fritid-hobby/sport-fitness/fitnessudstyr-tilbehor/vagtskiver"
+                },
+                {
+                  "slug": "vagtstang-vagtstangssat",
+                  "path": "sport-fritid-hobby/sport-fitness/fitnessudstyr-tilbehor/vagtstang-vagtstangssat"
+                },
+                {
+                  "slug": "vagtvest",
+                  "path": "sport-fritid-hobby/sport-fitness/fitnessudstyr-tilbehor/vagtvest"
+                },
+                {
+                  "slug": "yogaudstyr",
+                  "path": "sport-fritid-hobby/sport-fitness/fitnessudstyr-tilbehor/yogaudstyr"
+                }
+              ]
+            },
+            {
+              "slug": "traningsmaskine",
+              "path": "sport-fritid-hobby/sport-fitness/traningsmaskine",
+              "children": [
+                {
+                  "slug": "crosstrainer",
+                  "path": "sport-fritid-hobby/sport-fitness/traningsmaskine/crosstrainer"
+                },
+                {
+                  "slug": "lobeband",
+                  "path": "sport-fritid-hobby/sport-fitness/traningsmaskine/lobeband"
+                },
+                {
+                  "slug": "motionscykel",
+                  "path": "sport-fritid-hobby/sport-fitness/traningsmaskine/motionscykel"
+                },
+                {
+                  "slug": "multigym",
+                  "path": "sport-fritid-hobby/sport-fitness/traningsmaskine/multigym"
+                },
+                {
+                  "slug": "pedaltraner",
+                  "path": "sport-fritid-hobby/sport-fitness/traningsmaskine/pedaltraner"
+                },
+                {
+                  "slug": "pilates-reformer",
+                  "path": "sport-fritid-hobby/sport-fitness/traningsmaskine/pilates-reformer"
+                },
+                {
+                  "slug": "romaskine",
+                  "path": "sport-fritid-hobby/sport-fitness/traningsmaskine/romaskine"
+                },
+                {
+                  "slug": "spinningcykel",
+                  "path": "sport-fritid-hobby/sport-fitness/traningsmaskine/spinningcykel"
+                },
+                {
+                  "slug": "stepmaskine",
+                  "path": "sport-fritid-hobby/sport-fitness/traningsmaskine/stepmaskine"
+                },
+                {
+                  "slug": "vibrationstraner",
+                  "path": "sport-fritid-hobby/sport-fitness/traningsmaskine/vibrationstraner"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "slug": "walkie-talkie",
+          "path": "sport-fritid-hobby/walkie-talkie"
+        }
+      ]
+    },
+    {
+      "slug": "tv-lyd-smart-home",
+      "path": "tv-lyd-smart-home",
+      "children": [
+        {
+          "slug": "dj-pa-udstyr",
+          "path": "tv-lyd-smart-home/dj-pa-udstyr"
+        },
+        {
+          "slug": "film-musik",
+          "path": "tv-lyd-smart-home/film-musik",
+          "children": [
+            {
+              "slug": "film",
+              "path": "tv-lyd-smart-home/film-musik/film"
+            },
+            {
+              "slug": "mp3-afspiller",
+              "path": "tv-lyd-smart-home/film-musik/mp3-afspiller"
+            },
+            {
+              "slug": "musikinstrumenter",
+              "path": "tv-lyd-smart-home/film-musik/musikinstrumenter"
+            },
+            {
+              "slug": "tv-serier",
+              "path": "tv-lyd-smart-home/film-musik/tv-serier"
+            }
+          ]
+        },
+        {
+          "slug": "hojtalere-hi-fi",
+          "path": "tv-lyd-smart-home/hojtalere-hi-fi",
+          "children": [
+            {
+              "slug": "bilstereo",
+              "path": "tv-lyd-smart-home/hojtalere-hi-fi/bilstereo"
+            },
+            {
+              "slug": "forstarker",
+              "path": "tv-lyd-smart-home/hojtalere-hi-fi/forstarker"
+            },
+            {
+              "slug": "hjemmebiograf",
+              "path": "tv-lyd-smart-home/hojtalere-hi-fi/hjemmebiograf"
+            },
+            {
+              "slug": "hojttalerbeslag-tilbehor",
+              "path": "tv-lyd-smart-home/hojtalere-hi-fi/hojttalerbeslag-tilbehor"
+            },
+            {
+              "slug": "hojttalere",
+              "path": "tv-lyd-smart-home/hojtalere-hi-fi/hojttalere"
+            },
+            {
+              "slug": "karaoke",
+              "path": "tv-lyd-smart-home/hojtalere-hi-fi/karaoke"
+            },
+            {
+              "slug": "pladeafspiller",
+              "path": "tv-lyd-smart-home/hojtalere-hi-fi/pladeafspiller"
+            },
+            {
+              "slug": "receiver",
+              "path": "tv-lyd-smart-home/hojtalere-hi-fi/receiver"
+            },
+            {
+              "slug": "soundbar",
+              "path": "tv-lyd-smart-home/hojtalere-hi-fi/soundbar"
+            },
+            {
+              "slug": "subwoofer",
+              "path": "tv-lyd-smart-home/hojtalere-hi-fi/subwoofer"
+            }
+          ]
+        },
+        {
+          "slug": "horetelefoner-tilbehor",
+          "path": "tv-lyd-smart-home/horetelefoner-tilbehor",
+          "children": [
+            {
+              "slug": "horetelefoner",
+              "path": "tv-lyd-smart-home/horetelefoner-tilbehor/horetelefoner"
+            },
+            {
+              "slug": "tilbehor-til-horetelefoner",
+              "path": "tv-lyd-smart-home/horetelefoner-tilbehor/tilbehor-til-horetelefoner",
+              "children": [
+                {
+                  "slug": "andet-tilbehor-til-horetelefoner",
+                  "path": "tv-lyd-smart-home/horetelefoner-tilbehor/tilbehor-til-horetelefoner/andet-tilbehor-til-horetelefoner"
+                },
+                {
+                  "slug": "orepropper",
+                  "path": "tv-lyd-smart-home/horetelefoner-tilbehor/tilbehor-til-horetelefoner/orepropper"
+                },
+                {
+                  "slug": "orepuder",
+                  "path": "tv-lyd-smart-home/horetelefoner-tilbehor/tilbehor-til-horetelefoner/orepuder"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "slug": "infoskarme",
+          "path": "tv-lyd-smart-home/infoskarme"
+        },
+        {
+          "slug": "mikrofoner-tilbehor",
+          "path": "tv-lyd-smart-home/mikrofoner-tilbehor",
+          "children": [
+            {
+              "slug": "diktafon",
+              "path": "tv-lyd-smart-home/mikrofoner-tilbehor/diktafon"
+            },
+            {
+              "slug": "mikrofon",
+              "path": "tv-lyd-smart-home/mikrofoner-tilbehor/mikrofon"
+            },
+            {
+              "slug": "mikrofontilbehor",
+              "path": "tv-lyd-smart-home/mikrofoner-tilbehor/mikrofontilbehor"
+            }
+          ]
+        },
+        {
+          "slug": "projektorer-tilbehor",
+          "path": "tv-lyd-smart-home/projektorer-tilbehor",
+          "children": [
+            {
+              "slug": "andet-tilbehor-til-projektorer",
+              "path": "tv-lyd-smart-home/projektorer-tilbehor/andet-tilbehor-til-projektorer"
+            },
+            {
+              "slug": "projektor",
+              "path": "tv-lyd-smart-home/projektorer-tilbehor/projektor"
+            },
+            {
+              "slug": "projektorbeslag",
+              "path": "tv-lyd-smart-home/projektorer-tilbehor/projektorbeslag"
+            },
+            {
+              "slug": "projektorlarred",
+              "path": "tv-lyd-smart-home/projektorer-tilbehor/projektorlarred"
+            }
+          ]
+        },
+        {
+          "slug": "radio-stereo",
+          "path": "tv-lyd-smart-home/radio-stereo",
+          "children": [
+            {
+              "slug": "cd-afspiller",
+              "path": "tv-lyd-smart-home/radio-stereo/cd-afspiller"
+            },
+            {
+              "slug": "clockradio-vakkeur",
+              "path": "tv-lyd-smart-home/radio-stereo/clockradio-vakkeur"
+            },
+            {
+              "slug": "radio",
+              "path": "tv-lyd-smart-home/radio-stereo/radio"
+            },
+            {
+              "slug": "stereoanlag",
+              "path": "tv-lyd-smart-home/radio-stereo/stereoanlag"
+            }
+          ]
+        },
+        {
+          "slug": "smart-home",
+          "path": "tv-lyd-smart-home/smart-home",
+          "children": [
+            {
+              "slug": "smart-home-startpakke",
+              "path": "tv-lyd-smart-home/smart-home/smart-home-startpakke"
+            }
+          ]
+        },
+        {
+          "slug": "tv-tilbehor",
+          "path": "tv-lyd-smart-home/tv-tilbehor",
+          "children": [
+            {
+              "slug": "digital-tv-antenner",
+              "path": "tv-lyd-smart-home/tv-tilbehor/digital-tv-antenner",
+              "children": [
+                {
+                  "slug": "ca-modul",
+                  "path": "tv-lyd-smart-home/tv-tilbehor/digital-tv-antenner/ca-modul"
+                },
+                {
+                  "slug": "digital-tv-antennetilbehor",
+                  "path": "tv-lyd-smart-home/tv-tilbehor/digital-tv-antenner/digital-tv-antennetilbehor"
+                },
+                {
+                  "slug": "digital-tv-receiver",
+                  "path": "tv-lyd-smart-home/tv-tilbehor/digital-tv-antenner/digital-tv-receiver"
+                },
+                {
+                  "slug": "tv-antenne",
+                  "path": "tv-lyd-smart-home/tv-tilbehor/digital-tv-antenner/tv-antenne"
+                }
+              ]
+            },
+            {
+              "slug": "tv",
+              "path": "tv-lyd-smart-home/tv-tilbehor/tv"
+            },
+            {
+              "slug": "tv-tilbehor",
+              "path": "tv-lyd-smart-home/tv-tilbehor/tv-tilbehor",
+              "children": [
+                {
+                  "slug": "blu-ray-dvd-afspillere",
+                  "path": "tv-lyd-smart-home/tv-tilbehor/tv-tilbehor/blu-ray-dvd-afspillere"
+                },
+                {
+                  "slug": "fjernbetjening-til-tv",
+                  "path": "tv-lyd-smart-home/tv-tilbehor/tv-tilbehor/fjernbetjening-til-tv"
+                },
+                {
+                  "slug": "multimedie-rengoring",
+                  "path": "tv-lyd-smart-home/tv-tilbehor/tv-tilbehor/multimedie-rengoring"
+                },
+                {
+                  "slug": "streaming-medieafspiller",
+                  "path": "tv-lyd-smart-home/tv-tilbehor/tv-tilbehor/streaming-medieafspiller"
+                },
+                {
+                  "slug": "tv-bord",
+                  "path": "tv-lyd-smart-home/tv-tilbehor/tv-tilbehor/tv-bord"
+                },
+                {
+                  "slug": "tv-rammer",
+                  "path": "tv-lyd-smart-home/tv-tilbehor/tv-tilbehor/tv-rammer"
+                },
+                {
+                  "slug": "tv-stativ",
+                  "path": "tv-lyd-smart-home/tv-tilbehor/tv-tilbehor/tv-stativ"
+                },
+                {
+                  "slug": "vagbeslag-til-tv",
+                  "path": "tv-lyd-smart-home/tv-tilbehor/tv-tilbehor/vagbeslag-til-tv"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "slug": "videokonference",
+          "path": "tv-lyd-smart-home/videokonference"
+        }
+      ]
+    }
+  ]
+}
