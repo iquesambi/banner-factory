@@ -31,6 +31,12 @@ export const PALETTE = {
   navyLight: '#0e2d7c',
   navyDark: '#041752',
   green: '#77be24',
+  /**
+   * The button is two pills, not one: a second in this darker green sits
+   * about eight pixels down and to the right, which is what gives it depth.
+   * Measured in `01-dk-sidste-chance` and `03-dk-ipad-tradein`.
+   */
+  greenDeep: '#096729',
   pink: '#ed3089',
   yellow: '#fdf100',
   white: '#ffffff',
@@ -38,29 +44,63 @@ export const PALETTE = {
   energyA: '#05a54d',
 } as const;
 
+/**
+ * How far the button's shadow sits below and to the right, in pixels.
+ * Measured at +10 in `01-dk-sidste-chance` and +7 in `03-dk-ipad-tradein`.
+ */
+export const CTA_DEPTH = 9;
+
 export const FONTS = {
   headline: { family: 'Elkjop A Int Headline', file: 'brand/fonts/ElkjopAIntHeadline-Regular.otf' },
   body: { family: 'Elkjop A Int Bodytext', file: 'brand/fonts/ElkjopAIntBodytext-Regular.otf' },
   bodyBold: { family: 'Elkjop A Int Bodytext', file: 'brand/fonts/ElkjopAIntBodytext-DemiBold.otf' },
 } as const;
 
+/**
+ * The logo files exist in `brand/`, and none of the eight production banners
+ * carries one — the banner runs inside a page that already has the logo in
+ * its header. An earlier version of this renderer put one in the top right
+ * corner; that was my addition and it is gone.
+ */
 export const LOGO = {
   onNavy: 'brand/logo/elgiganten-white.svg',
   onLight: 'brand/logo/elgiganten-navy.svg',
+  usedOnBanner: false,
 } as const;
 
 /**
- * The three bands every product banner in `examples/` uses, in pixels.
+ * The safe margin, measured off the references rather than chosen.
  *
- * Approximate on purpose: they were measured off the references and are a
- * starting grid, not a cage. A 98" television and a toothbrush do not want the
- * same middle band.
+ * In `03-dk-ipad-tradein` the text runs x 77..690 and the side band x
+ * 1516..1970 — a 77 and 78 pixel margin on either side, and the same
+ * vertically. Nothing but the fine print and a deliberately large product
+ * goes past it.
+ */
+export const MARGIN = 78;
+
+/**
+ * The three bands, in pixels, as the production banners actually place them.
+ *
+ * These are measurements, not estimates: the product sits at x 778..1515 in
+ * all three product banners, and the side band starts at x 1516 in both that
+ * carry a price.
  */
 export const ZONES = {
-  text: { x: 100, y: 0, width: 620, height: CANVAS.height },
-  product: { x: 760, y: 0, width: 700, height: CANVAS.height },
-  side: { x: 1500, y: 0, width: 450, height: CANVAS.height },
+  text: { x: MARGIN, y: MARGIN, width: 612, height: CANVAS.height - MARGIN * 2 },
+  product: { x: 778, y: 0, width: 737, height: CANVAS.height },
+  side: { x: 1516, y: MARGIN, width: 454, height: CANVAS.height - MARGIN * 2 },
 } as const;
+
+/**
+ * How much vertical room the product gets, and the floor under it.
+ *
+ * Measured: the product occupies 68% to 90% of the canvas height across the
+ * references, with at least 56 pixels of air above it, and in none of the
+ * eight is it cropped by the edge of the canvas. An earlier version of this
+ * renderer let a large product bleed off the bottom; that was my invention,
+ * not something the brand does, and it read as a mistake.
+ */
+export const PRODUCT_BOX = { marginTop: 56, marginBottom: 56, maxFraction: 0.9 } as const;
 
 /**
  * How each badge is drawn, taken from where it appears in the references.
@@ -80,6 +120,9 @@ export const BADGE_TREATMENT: Record<string, string> = {
 export interface BriefBadge {
   kind: string;
   value: string;
+  /** The same figure as a number, so the renderer can set it in brand style. */
+  amount?: number;
+  pct?: number;
   treatment: string;
   /** The strategist's sentence, kept so a human can argue with the choice. */
   reason: string;
@@ -181,6 +224,8 @@ export function buildBrief(input: BriefInput): ArtDirectorBrief {
     badges: input.show.map((s) => ({
       kind: s.badge.kind,
       value: s.badge.value,
+      ...(s.badge.amount !== undefined ? { amount: s.badge.amount } : {}),
+      ...(s.badge.pct !== undefined ? { pct: s.badge.pct } : {}),
       treatment: BADGE_TREATMENT[s.badge.kind] ?? 'side band',
       reason: s.reason,
     })),

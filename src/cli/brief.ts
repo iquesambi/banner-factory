@@ -12,10 +12,12 @@
  * front end, it will make the same two calls.
  */
 import { writeFileSync, mkdirSync } from 'node:fs';
-import { recommendWorkflow, composeWorkflow } from '../mastra/index.js';
+import { recommendWorkflow, composeWorkflow, artDirectWorkflow } from '../mastra/index.js';
 import type { RecommendResult } from '../mastra/workflows/recommend.js';
 import type { ComposeResult } from '../mastra/workflows/compose.js';
+import type { ArtDirectResult } from '../mastra/workflows/art-direct.js';
 import { buildBrief, priceText, type ArtDirectorBrief } from '../banner/brief.js';
+import { imagePrompt, type ImagePromptMode } from '../banner/image-prompt.js';
 import type { Language } from '../banner/facts.js';
 
 const args = process.argv.slice(2);
@@ -30,8 +32,12 @@ if (!skus.length) {
   --pick=<n>          qual recomendacao usar (default 1, a melhor)
   --no-validate-pool  pula a limpeza de categoria (mais rapido)
   --quiet             nao imprime a timeline ao vivo
+  --no-render         para no briefing, nao desenha o banner
+  --image-prompt      imprime e grava o prompt pro gerador de imagem
+  --scene             o prompt pede so fundo e produto, sem texto
   --json              imprime o briefing completo em JSON
   --out=<dir>         grava um .json por briefing (default .cache/briefs)
+  --png=<dir>         onde gravam os banners (default .cache/banners)
 
 exemplo:
   npm run brief -- 802582 --no-validate-pool
@@ -47,6 +53,8 @@ if (!LANGS.includes(language)) {
 }
 const pickIndex = Number(flag('pick') ?? '1');
 const outDir = flag('out') ?? '.cache/briefs';
+const pngDir = flag('png') ?? '.cache/banners';
+const promptMode: ImagePromptMode = has('scene') ? 'scene' : 'full';
 const verbose = !has('quiet');
 
 async function start<T>(workflow: { createRun: unknown }, inputData: unknown, label: string): Promise<T> {
@@ -69,7 +77,12 @@ async function start<T>(workflow: { createRun: unknown }, inputData: unknown, la
 
 const rule = (s = '') => console.log(`\n${s}${'─'.repeat(Math.max(0, 76 - s.length))}`);
 
-function print(brief: ArtDirectorBrief, rec: RecommendResult, comp: ComposeResult) {
+function print(
+  brief: ArtDirectorBrief,
+  rec: RecommendResult,
+  comp: ComposeResult,
+  art: ArtDirectResult | null,
+) {
   console.log(`\n${'█'.repeat(76)}`);
   console.log(`  BRIEFING PARA O DIRETOR DE ARTE`);
   console.log(`  ${brief.canvas.width} × ${brief.canvas.height} · idioma ${brief.language}`);
@@ -133,11 +146,27 @@ function print(brief: ArtDirectorBrief, rec: RecommendResult, comp: ComposeResul
     for (const i of comp.copyIssues) console.log(`  · ${i}`);
   }
 
+  if (art) {
+    rule('DIRECAO DE ARTE ');
+    art.direction.headlineLines.forEach((l, i) => console.log(`  linha ${i + 1}    ${l}`));
+    console.log(`  produto    escala ${art.direction.productScale}`);
+    console.log(`  porque     ${art.direction.rationale}`);
+    if (art.issues.length) {
+      console.log('  reprovado no caminho:');
+      for (const i of art.issues) console.log(`    · ${i}`);
+    }
+    if (art.render) console.log(`\n  BANNER     ${art.render.png}`);
+    if (art.renderError) console.log(`\n  nao desenhou: ${art.renderError}`);
+  }
+
   rule('CUSTO ');
-  const calls = rec.cost.calls + comp.cost.calls;
-  const tokens = rec.cost.totalTokens + comp.cost.inputTokens + comp.cost.outputTokens;
+  const artCalls = art?.cost.calls ?? 0;
+  const artTokens = art ? art.cost.inputTokens + art.cost.outputTokens : 0;
+  const calls = rec.cost.calls + comp.cost.calls + artCalls;
+  const tokens = rec.cost.totalTokens + comp.cost.inputTokens + comp.cost.outputTokens + artTokens;
   console.log(`  escolher o produto  ${rec.cost.calls} chamada(s) · ${rec.cost.totalTokens} tokens`);
   console.log(`  escrever e decidir  ${comp.cost.calls} chamada(s) · ${comp.cost.inputTokens + comp.cost.outputTokens} tokens`);
+  if (art) console.log(`  direcao de arte     ${artCalls} chamada(s) · ${artTokens} tokens`);
   console.log(`  total               ${calls} chamada(s) · ${tokens} tokens`);
   if (rec.cost.callsAvoidedByCache) {
     console.log(`  evitadas por cache  ${rec.cost.callsAvoidedByCache}`);
@@ -204,8 +233,34 @@ for (const seedSku of skus) {
       finePrint: comp.finePrint,
     });
 
+    let art: ArtDirectResult | null = null;
+    if (!has('no-render')) {
+      if (verbose) console.log(`\n── desenhando o banner ${'─'.repeat(50)}`);
+      art = await start<ArtDirectResult>(
+        artDirectWorkflow,
+        { brief, outDir: pngDir, name: `${pick.sku}-${language}`, verbose },
+        'art-direct',
+      );
+    }
+
     briefs.push(brief);
-    print(brief, rec, comp);
+    print(brief, rec, comp, art);
+
+    if (has('image-prompt') && art) {
+      /**
+       * The prompt is built from the same brief the renderer uses, so the two
+       * can never describe different banners.
+       */
+      const text = imagePrompt(brief, art.direction, promptMode);
+      const file = `${outDir}/${pick.sku}-${language}-${promptMode}.prompt.txt`;
+      writeFileSync(file, text);
+      console.log(`\n${'█'.repeat(76)}`);
+      console.log(`  PROMPT DE IMAGEM (${promptMode}) — anexe a foto do produto ao colar`);
+      console.log('█'.repeat(76));
+      console.log(text);
+      console.log(`\n  gravado em ${file}`);
+      console.log(`  foto do produto: ${brief.product.image}`);
+    }
     mkdirSync(outDir, { recursive: true });
     writeFileSync(
       `${outDir}/${seedSku}-${pick.sku}-${language}.json`,

@@ -189,6 +189,131 @@ todo banner. O resto foi resolvido nomeando a armadilha no prompt: spara e não
 spar, erbjudande e não tilbud, ö e ä onde o dinamarquês usa ø e æ. Depois
 disso, "Spara 24000 kr".
 
+## O banner, desenhado
+
+O diretor de arte fecha a corrente. Ele recebe o briefing pronto e decide
+**duas coisas**: onde o título quebra em linhas, e quão grande o produto
+aparece. Mais nada.
+
+Essa fronteira é deliberada. A grade, a paleta, a tipografia e o bloco de
+preço são fatos de marca medidos, e pedir a um modelo que os reproduza só
+cria um jeito de eles saírem errados. O que sobra é julgamento de verdade, e
+é o que todo banner de referência mostra alguém decidindo: "DET ER PERFEKT
+AT / OPGRADERE LIGE NU" é uma escolha, e nenhuma regra que eu consiga
+escrever quebra bem uma frase arbitrária em três idiomas.
+
+Tudo que ele devolve é conjunto fechado ou é conferido contra a copy. As
+linhas têm que recompor o título palavra por palavra, e a frase em destaque
+tem que caber inteira numa linha — senão o verde ficaria partido no meio.
+
+### Medir em vez de supor
+
+Não havia biblioteca de imagem instalada, então escrevi um leitor de PNG em
+cima do `zlib` e amostrei os oito banners de produção pixel a pixel:
+
+| | |
+|---|---|
+| fundo | faixa diagonal, `#0e2d7c` no meio e `#041752` nas pontas |
+| verde | `#77be24` — destaque do título **e** botão |
+| rosa | `#ed3089` |
+| amarelo | `#fdf100` |
+
+Isso derrubou uma suposição: eu tinha achado um segundo verde, `#05a54d`, e
+ia usar no botão. Amostrando a região exata da pílula nos quatro banners, ela
+é `#77be24` em todos — o `#05a54d` é o verde de dentro do rótulo de energia
+classe A, que não é cor de marca.
+
+### O recorte do produto
+
+As fotos do feed são JPEG com fundo branco e sem margem. Branco colado no
+azul vira uma caixa. Tirar todo pixel claro fura o produto por dentro: some o
+logo Samsung, somem os ícones da tela.
+
+O que funciona é **preencher a partir da borda**: só o branco conectado à
+moldura é fundo. O branco de dentro sobrevive. Depois uma passada suaviza a
+silhueta, senão fica um halo claro contra o azul.
+
+Isso roda dentro da página, em canvas, porque o CDN não manda cabeçalho CORS
+— a imagem é baixada primeiro e o Chrome lê os pixels em modo local.
+
+### Como é rasterizado
+
+Chrome headless, que já estava na máquina, em 2048×768. Isso dá moldagem de
+texto de verdade com as OTF da marca, que é justamente o que um SVG escrito à
+mão erraria. O caminho do binário sai de `CHROME_PATH`.
+
+### A margem, medida em vez de arbitrada
+
+O primeiro banner saiu com a geladeira encostando em cima e cortada embaixo.
+Em vez de chutar um valor, medi a caixa do produto nos banners de referência:
+
+| | topo | base | altura |
+|---|---|---|---|
+| iPhone | 64px | 9px | 90% da tela |
+| iPad | 60px | 59px | 85% |
+| eletrodomésticos | 169px | 78px | 68% |
+
+E o texto: x 77..690, a lateral x 1516..1970. **A margem segura é 78px**, e as
+faixas passaram a ser essas medidas em vez das minhas estimativas.
+
+O achado que importa é outro: **em nenhum dos oito o produto é cortado pela
+borda**. A opção de sangra que eu tinha dado ao diretor de arte era invenção
+minha, não algo que a marca faz, e era exatamente ela que produzia o corte.
+Saiu do schema. Agora o produto cabe sempre inteiro, e a escala escolhe quanto
+do espaço disponível ele ocupa — nunca se ele vaza.
+
+### O que eu tinha errado por não olhar direito
+
+Três coisas, todas apontadas olhando o banner ao lado dos exemplos.
+
+**O logo.** Eu tinha posto um Elgiganten no canto superior direito. **Nenhum
+dos oito banners de produção tem logo** — eles rodam dentro de uma página que
+já traz o logo no cabeçalho. Os arquivos existem em `brand/`, mas não vão no
+banner. Saiu.
+
+**O botão tem profundidade.** Não é uma pílula lisa: há uma segunda, em verde
+escuro `#096729`, deslocada para baixo e para a direita. Medido em dois
+banners: +10px num, +7px no outro. E o texto dentro é azul-marinho, não verde
+escuro como eu tinha posto.
+
+Minha primeira tentativa foi um segundo elemento posicionado absoluto, e saiu
+errado de um jeito instrutivo: a largura de um absoluto é limitada pelo
+contêiner menos o `left`, então a pílula de trás ficou mais estreita e muito
+mais baixa que a da frente. Virou `box-shadow` sem desfoque, que segue o raio
+da borda de graça.
+
+**Estava tudo pequeno demais.** Medindo os exemplos: o selo de energia tem
+161×111 e 188×130 — eu tinha feito um terço disso. A barra amarela tem 65 a
+88px de altura. O preço tem 90 a 120px de altura de letra. E a barra amarela
+**cola no preço**, 17 a 26px de distância, enquanto o selo de energia fica
+bem solto. Eu tinha espaçamento uniforme de 18px entre tudo.
+
+### Três defeitos que só apareceram olhando o PNG
+
+O primeiro foi meu: a checagem rejeitava o título devolvido em caixa alta,
+embora o CSS faça `text-transform: uppercase` de qualquer jeito. Comparar
+ignorando a caixa resolveu.
+
+O segundo foi o mesmo erro pelo avesso. Deixei a checagem insensível à caixa
+e esqueci o render, então o destaque verde sumiu do banner inteiro sem
+reprovar nada. Agora os dois comparam igual.
+
+O terceiro foi a quebra `RIGTIG / god plads til alle / dine indkøb`, com uma
+palavra sozinha na primeira linha — exatamente o que as instruções proíbem.
+Virou checagem: linha de uma palavra só, ao lado de linhas muito maiores,
+reprova e volta com o motivo.
+
+Depois ainda apareceram dois de formatação, também só olhando: o selo dizia
+`330 KR (13%)` e o preço anterior `Før 2529,-`, sem ponto de milhar. O número
+agora viaja como número até o renderizador, que o escreve no estilo da marca —
+`SPAR 330,-`, `Før 2.529,-` — e a palavra do selo tem tabela por idioma, pelo
+mesmo motivo do botão.
+
+E uma faixa branca de cinco pixels na base, que não reproduziu numa segunda
+renderização. Artefato de pintura intermitente é pior que um fixo, porque
+passa despercebido: o fundo padrão do Chrome passou a ser o azul escuro do
+próprio banner, então o mesmo escorregão fica invisível.
+
 ## Onde está hoje
 
 | | |
@@ -300,6 +425,18 @@ O resto do feed ele carrega como está.
 | 17 | Estrategista roda depois do redator e lê a copy | selo que repete o título desperdiça o único espaço que carregaria uma segunda ideia |
 | 18 | Botão sai de lista fechada por idioma | banner em inglês voltou com botão em dinamarquês, e nenhuma instrução evitou |
 | 19 | Rascunho reprovado volta com o motivo, não com o mesmo pedido | pedir de novo igual reproduz o mesmo rascunho |
+| 20 | Diretor de arte decide só quebra de linha e escala do produto | grade, cor e tipo são fatos medidos; pedir ao modelo só cria jeito de sair errado |
+| 21 | Cores e medidas lidas dos PNGs de produção, não descritas | derrubou minha suposição sobre a cor do botão |
+| 22 | Recorte por preenchimento desde a borda | tirar todo branco fura o produto; só o branco ligado à moldura é fundo |
+| 23 | Chrome headless rasteriza o HTML | moldagem de texto real com as OTF da marca, sem dependência nova |
+| 24 | O produto nunca é cortado pela borda | nenhum dos oito banners de referência corta; a sangra era invenção minha e foi o que estragou o primeiro |
+| 25 | Margem segura de 78px, medida nos banners | texto em x 77..690 e lateral em x 1516..1970 nos dois banners com preço |
+| 26 | Valor do selo viaja como número até o render | só assim dá pra escrever no estilo da marca, com ponto de milhar e vírgula-traço |
+| 27 | Banner não leva logo | nenhum dos oito exemplos tem; o logo é do cabeçalho da página |
+| 28 | Botão é pílula com sombra dura em verde escuro | medido +7 e +10px nos exemplos; elemento absoluto atrás sai estreito e torto |
+| 29 | Tamanhos de selo, barra e preço vêm de medição | eu tinha feito o selo de energia com um terço do tamanho real |
+| 30 | Prompt de imagem é montado do briefing, não escrito à mão | redator muda uma palavra e o prompt muda junto, sem ninguém lembrar |
+| 31 | Dois modos: `full` e `scene` | em `full` o preço passa a ser desenhado por um modelo; `scene` deixa os números no código |
 
 ## O que ainda falta
 
@@ -347,11 +484,22 @@ Vários de uma vez, e cada um grava um .json completo em `.cache/runs/`:
 npm run recommend -- 1116833 498120 802582
 ```
 
-A corrente inteira, que e o teste de ponta a ponta — semente entra, briefing
-do diretor de arte sai:
+A corrente inteira — semente entra, banner 2048×768 sai em `.cache/banners/`:
 
 ```bash
 npm run brief -- 802582 --no-validate-pool
+```
+
+Parando no briefing, sem desenhar:
+
+```bash
+npm run brief -- 802582 --no-validate-pool --no-render
+```
+
+O prompt pro gerador de imagem do Gemini, montado a partir do briefing:
+
+```bash
+npm run brief -- 802582 --no-validate-pool --image-prompt
 ```
 
 Escrever a copy e decidir os selos de um produto:

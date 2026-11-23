@@ -67,13 +67,42 @@ export const BADGE_LABELS: Record<BadgeKind, string> = {
 
 export interface Badge {
   kind: BadgeKind;
-  /** The literal truth it would show, already formatted. */
+  /** The literal truth it would show, in words, for the strategist to weigh. */
   value: string;
+  /**
+   * The same truth as a number, when there is one.
+   *
+   * The renderer needs this: it sets the price in the brand's own style, with
+   * a thousands separator and a trailing comma-dash, and it cannot do that
+   * from a string that has already been written out.
+   */
+  amount?: number;
+  pct?: number;
   /** Which feed field it comes from, so a reviewer can check it. */
   source: string;
   /** A condition the banner must state if this badge is used, if any. */
   requires: string | null;
 }
+
+/**
+ * The word on the savings badge, per language.
+ *
+ * Brand chrome rather than copy — the writer never produces it — so it is a
+ * fixed table for the same reason the buttons are: the feed is Danish and
+ * "SPAR" would otherwise walk straight onto a Swedish banner.
+ */
+export const SAVE_WORD: Record<Language, string> = {
+  da: 'SPAR',
+  sv: 'SPARA',
+  en: 'SAVE',
+};
+
+/** The word before the previous price, per language. */
+export const BEFORE_WORD: Record<Language, string> = {
+  da: 'Før',
+  sv: 'Förr',
+  en: 'Was',
+};
 
 export interface BlockedBadge {
   kind: BadgeKind;
@@ -203,12 +232,15 @@ export function buildFacts(p: TaggedProduct, language: Language): BannerFacts {
     available.push({
       kind: 'saving',
       value: `${p.saveAmount} kr${p.discountPct > 0 ? ` (${p.discountPct}%)` : ''}`,
+      amount: p.saveAmount,
+      pct: p.discountPct,
       source: 'SavePriceAmount',
       requires: null,
     });
     available.push({
       kind: 'oldPrice',
       value: `${p.oldPrice} kr`,
+      amount: p.oldPrice,
       source: 'Price + SavePriceAmount',
       requires: null,
     });
@@ -229,6 +261,7 @@ export function buildFacts(p: TaggedProduct, language: Language): BannerFacts {
     available.push({
       kind: 'memberPrice',
       value: `${klub} kr for members`,
+      amount: klub,
       source: 'SalesPoint',
       requires: 'the banner must say this price is for members',
     });
