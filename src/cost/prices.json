@@ -1,0 +1,52 @@
+{
+  "source": "https://aistudio.google.com/docs/pricing",
+  "readAt": "2026-11-23",
+  "currency": "USD",
+  "unit": "per 1,000,000 tokens",
+  "note": "Paid tier, standard (not Batch, Flex or Priority). Google publishes no pricing API, so this table is read from the page by hand and carries the date it was read. Where the page states a scheduled change, both periods are listed and the meter picks by date.",
+  "models": {
+    "gemini-3.5-flash-lite": [
+      { "from": "2026-01-01", "in": 0.3, "out": 2.5 }
+    ],
+    "gemini-3.1-flash-lite": [
+      { "from": "2026-01-01", "in": 0.25, "out": 1.5 }
+    ],
+    "gemini-2.5-flash-lite": [
+      { "from": "2026-01-01", "in": 0.1, "out": 0.4 }
+    ],
+    "gemini-3.8-flash": [
+      { "from": "2026-01-01", "in": 0.75, "out": 3.75 },
+      { "from": "2027-01-01", "in": 1.5, "out": 7.5 }
+    ],
+    "gemini-3.6-flash": [
+      { "from": "2026-01-01", "in": 0.75, "out": 3.75 },
+      { "from": "2027-01-01", "in": 1.5, "out": 7.5 }
+    ],
+    "gemini-2.5-flash": [
+      { "from": "2026-01-01", "in": 0.3, "out": 2.5 }
+    ],
+    "gemini-4-hydrogen": [
+      { "from": "2026-01-01", "in": 1.5, "out": 7.5 }
+    ],
+    "gemini-4-neon": [
+      { "from": "2026-01-01", "in": 3.0, "out": 15.0 }
+    ],
+    "gemini-4-carbon": [
+      { "from": "2026-01-01", "in": 2.0, "out": 10.0 },
+      { "from": "2026-12-01", "in": 4.0, "out": 20.0 }
+    ],
+    "gemini-4-argon": [
+      { "from": "2026-01-01", "in": 2.0, "out": 10.0 },
+      { "from": "2026-12-01", "in": 4.0, "out": 20.0 }
+    ]
+  },
+  "notVerbatim": [
+    "gemini-3.1-flash-lite",
+    "gemini-2.5-flash-lite",
+    "gemini-3.6-flash",
+    "gemini-2.5-flash",
+    "gemini-4-hydrogen",
+    "gemini-4-neon"
+  ],
+  "notVerbatimNote": "Read from a summary of the lower part of the page rather than quoted directly. gemini-3.5-flash-lite, gemini-3.8-flash, gemini-4-carbon and gemini-4-argon were read verbatim. Confirm the rest against the page before trusting a bill."
+}

@@ -209,8 +209,11 @@ export function bannerHtml(
   .product { position:absolute; left:${z.product.x}px; top:0;
              width:${z.product.width}px; height:${height}px;
              display:flex; align-items:center; justify-content:center; }
-  .product canvas, .product img { max-width:${productW}px; max-height:${productH}px;
+  .product canvas, .product img { position:relative; z-index:1;
+             max-width:${productW}px; max-height:${productH}px;
              width:auto; height:auto; object-fit:contain; }
+
+
 
   /* Measured spacing: the badges sit well apart, but the yellow bar hugs the
      price — 17 to 26 pixels between them in every banner that has both. */
@@ -310,14 +313,46 @@ ${brief.finePrint ? `<div class="fine">${esc(brief.finePrint)}</div>` : ''}
       if (qy > 0) stack.push(q - W);
       if (qy < H - 1) stack.push(q + W);
     }
-    // Feather the silhouette so no white halo survives against the navy.
+    /**
+     * How dark the product is, over its own pixels only: the transparent
+     * background would otherwise drag the average wherever the cut-out was
+     * generous. Relative luminance, the measure a contrast ratio uses.
+     */
+    const chan = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
+    let sum = 0, n = 0;
+    for (let i = 0; i < px.length; i += 16) {
+      if (px[i + 3] < 128) continue;
+      sum += 0.2126 * chan(px[i]) + 0.7152 * chan(px[i + 1]) + 0.0722 * chan(px[i + 2]);
+      n++;
+    }
+    const dark = n > 0 && sum / n < 0.10;
+
+    /**
+     * The silhouette's edge pixels are a blend of product and the white the
+     * photograph sat on, so on navy they read as a pale outline drawn around
+     * the product.
+     *
+     * For a dark product the honest repair is to give those pixels the
+     * product's own colour rather than fade them out: painted near-black and
+     * fully opaque, the edge becomes the product's edge. Fading them instead
+     * leaves a grey rim, and lighting the background behind the product —
+     * which is what this did first — reads as a halo nobody asked for.
+     *
+     * A light product has no such contamination to hide, so it keeps the soft
+     * fade, which is what stops a hard jagged step on a pale silhouette.
+     */
     const edge = new Uint8Array(seen);
     for (let yy = 1; yy < H - 1; yy++) for (let xx = 1; xx < W - 1; xx++) {
       const q = yy * W + xx;
       if (edge[q]) continue;
       const i = q * 4;
       if (!light(i, 212)) continue;
-      if (edge[q - 1] || edge[q + 1] || edge[q - W] || edge[q + W]) px[i + 3] = 80;
+      if (!(edge[q - 1] || edge[q + 1] || edge[q - W] || edge[q + W])) continue;
+      if (dark) {
+        px[i] = 17; px[i + 1] = 17; px[i + 2] = 19; px[i + 3] = 255;
+      } else {
+        px[i + 3] = 80;
+      }
     }
     x.putImageData(d, 0, 0);
   } catch (e) {

@@ -25,7 +25,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'expected a JSON body' }, { status: 400 });
   }
 
-  const items = (body as { items?: Array<{ sku?: unknown; language?: unknown }> }).items;
+  const parsed = body as { items?: Array<{ sku?: unknown; language?: unknown }>; reuse?: unknown };
+  const items = parsed.items;
+  /** Reuse is the default; the person has to ask for a fresh banner. */
+  const optOut = parsed.reuse === false;
   if (!Array.isArray(items) || !items.length) {
     return NextResponse.json({ error: 'expected items: [{ sku, language }]' }, { status: 400 });
   }
@@ -36,7 +39,7 @@ export async function POST(request: Request) {
     const language = LANGUAGES.includes(item.language as Language) ? (item.language as Language) : 'da';
     if (!sku) continue;
     try {
-      created.push(enqueue(sku, language));
+      created.push(enqueue(sku, language, optOut));
     } catch (error) {
       return NextResponse.json(
         { error: error instanceof Error ? error.message : String(error) },

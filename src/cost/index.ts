@@ -2,11 +2,19 @@
  * What one banner cost.
  *
  * Token counts come from the provider's own `usage` on each response, so they
- * are measured, not estimated. The money figure is only as good as the rates
- * in the environment: prices change and I am not going to hardcode a number
- * that silently goes stale. With no rates set, the meter still reports every
- * token and says plainly that it cannot price them.
+ * are measured, not estimated.
+ *
+ * Turning them into money needs a rate, and there is no pricing API to ask:
+ * Google's own page says nothing about one, and the aggregators that claim to
+ * have the numbers disagree with each other. So the rates live in
+ * `prices.json` — checked in, dated, and carrying the URL they were read
+ * from. That is reference data, not configuration: it belongs where a
+ * reviewer can see it go stale, not in an environment variable nobody opens.
+ *
+ * An environment variable still wins when it is set, for a negotiated rate or
+ * a quick experiment, and the meter reports which of the two it used.
  */
+import PRICES from './prices.json' with { type: 'json' };
 
 export interface ModelUsage {
   inputTokens: number;
@@ -38,20 +46,63 @@ const num = (v: string | undefined) => {
   return Number.isFinite(n) ? n : null;
 };
 
+interface PricePeriod {
+  from: string;
+  in: number;
+  out: number;
+}
+
+const TABLE = PRICES as unknown as {
+  source: string;
+  readAt: string;
+  models: Record<string, PricePeriod[]>;
+  notVerbatim: string[];
+};
+
+/** Where a rate came from, so the number can be doubted on purpose. */
+export type RateOrigin = 'env' | 'table' | 'table-unconfirmed';
+
+export interface SourcedRate extends Rate {
+  origin: RateOrigin;
+  /** The date the table was read, for a table rate. */
+  readAt?: string;
+}
+
 /**
- * Rates are per model family, because a run may mix a cheap classifier with a
- * stronger model for copy. Set them from the provider's current price page:
+ * The rate for one model, at a point in time.
  *
- *   GEMINI_PRICE_IN_PER_MTOK=0.10
- *   GEMINI_PRICE_OUT_PER_MTOK=0.40
+ * Prices have scheduled changes — Google lists the dates on the page — so the
+ * table holds one entry per period and this picks the latest one that has
+ * already started. A run in November and the same run in January price
+ * differently, which is correct and would otherwise be silently wrong.
  */
-export function rateFor(model: string): Rate | null {
+export function rateFor(model: string, at: Date = new Date()): SourcedRate | null {
+  /** An explicit rate always wins: it is someone saying they know better. */
   const family = model.startsWith('gemini') ? 'GEMINI' : null;
-  if (!family) return null;
-  const i = num(process.env[`${family}_PRICE_IN_PER_MTOK`]);
-  const o = num(process.env[`${family}_PRICE_OUT_PER_MTOK`]);
-  if (i === null || o === null) return null;
-  return { inPerMTok: i, outPerMTok: o };
+  if (family) {
+    const i = num(process.env[`${family}_PRICE_IN_PER_MTOK`]);
+    const o = num(process.env[`${family}_PRICE_OUT_PER_MTOK`]);
+    if (i !== null && o !== null) return { inPerMTok: i, outPerMTok: o, origin: 'env' };
+  }
+
+  const periods = TABLE.models[model];
+  if (!periods?.length) return null;
+
+  const day = at.toISOString().slice(0, 10);
+  const live = periods.filter((p) => p.from <= day).sort((a, b) => a.from.localeCompare(b.from)).at(-1);
+  if (!live) return null;
+
+  return {
+    inPerMTok: live.in,
+    outPerMTok: live.out,
+    origin: TABLE.notVerbatim.includes(model) ? 'table-unconfirmed' : 'table',
+    readAt: TABLE.readAt,
+  };
+}
+
+/** For anything that wants to show where the numbers came from. */
+export function priceSource(): { url: string; readAt: string } {
+  return { url: TABLE.source, readAt: TABLE.readAt };
 }
 
 export class CostMeter {

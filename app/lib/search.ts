@@ -17,6 +17,9 @@ export interface Hit {
   stockBand: string;
   category: string | null;
   image: string | null;
+  /** Carried so a stored banner can be revalidated against today's feed. */
+  saveAmount: number | null;
+  discountPct: number;
 }
 
 interface Row extends Hit {
@@ -39,6 +42,8 @@ function load(): Row[] {
     stockBand: p.stockBand,
     category: p.category,
     image: p.image,
+    saveAmount: p.saveAmount,
+    discountPct: p.discountPct,
     // The SKU goes in the haystack too: people paste one straight from the
     // feed, and a name-only index would answer nothing.
     haystack: `${fold(p.name)} ${p.sku.toLowerCase()}`,

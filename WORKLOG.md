@@ -379,6 +379,151 @@ de dentro de `app/page.tsx`.
 - **Os blocos não arrastam**: ligam e desligam. A ordem dentro da faixa não
   muda nada hoje, então arrastar seria enfeite.
 
+## O preço em dinheiro, e onde ele mora
+
+O contador sempre mediu tokens de verdade. O que faltava era a tarifa, e eu
+tinha posto em variável de ambiente — errado, e você apontou.
+
+**Não existe API de preço.** Procurei, e a própria página do Google não
+menciona nenhuma; os agregadores que dizem ter os números discordam entre si.
+Então fui na fonte: `aistudio.google.com/docs/pricing`.
+
+As tarifas agora vivem em **`src/cost/prices.json`**, versionado, com a URL de
+onde vieram e a data em que foram lidas. Isso é dado de referência, não
+configuração: o lugar dele é onde alguém revisa e vê envelhecer, não numa
+variável que ninguém abre.
+
+Três coisas que o formato resolve:
+
+**Preço muda com data marcada.** A página lista aumentos agendados — o
+`gemini-4-carbon` dobra em 1º de dezembro, o `gemini-3.8-flash` em 1º de
+janeiro. Cada modelo guarda uma lista de períodos e o medidor escolhe pelo
+dia da execução. Uma rodada em novembro e a mesma em janeiro custam
+diferente, o que está certo e antes sairia silenciosamente errado.
+
+**Nem tudo foi lido com a mesma confiança.** Quatro modelos saíram literais da
+página; o resto veio de um resumo da parte de baixo dela. Esses estão listados
+em `notVerbatim`, e o medidor marca a tarifa como `table-unconfirmed` em vez
+de fingir que são iguais.
+
+**A variável de ambiente continua valendo**, e ganha da tabela quando existe —
+serve para tarifa negociada ou para um teste rápido. O medidor diz de onde
+veio o número.
+
+### O que um banner custa, medido
+
+| semente | categoria | chamadas | tokens | custo |
+|---|---|---|---|---|
+| geladeira 802582 | quente, faixas em cache | 4 | 3.904 | **$0,0022** |
+| TV 1083310 | fria, classificando faixa | 8 | 24.679 | **$0,0238** |
+
+Dez vezes de diferença pela mesma peça. É o argumento do cache deixando de
+ser retórica e virando dinheiro — e é também a medida contra a qual a geração
+de imagem vai ser comparada, que eu suspeito que vai dominar as duas linhas.
+
+O número aparece no CLI e no card aberto, sempre com a ressalva de que é só
+texto e com a data em que a tabela foi lida.
+
+## O produto preto que sumiu no fundo
+
+A primeira adega gerada pela interface saiu ruim e eu quase consertei a coisa
+errada. O relato foi "o recorte está ruim", e o recorte parecia mesmo ser o
+culpado — havia um bloco mais claro em volta do produto.
+
+Medi antes de mexer. Renderizei o recorte sozinho sobre magenta e contei:
+**99,8% do branco foi removido, sobraram 29 pixels.** O recorte estava certo.
+
+O problema era contraste:
+
+| | luminância | contraste com o azul claro |
+|---|---|---|
+| adega Temptech, preta | 0,0305 | **1,40 : 1** |
+| navy claro `#0e2d7c` | 0,0343 | — |
+| navy escuro `#041752` | 0,0125 | 1,04 : 1 |
+| geladeira Samsung, inox | — | 5,24 : 1 |
+
+Produto quase preto sobre fundo quase preto. A geladeira sempre funcionou
+porque o inox tem quase quatro vezes mais contraste; eu nunca tinha testado
+com um produto escuro.
+
+Minha primeira correção foi acender uma luz atrás do produto: lavagem radial
+mais um `drop-shadow` seguindo o alfa do recorte. Funcionava no sentido de
+separar, e ficou artificial — um halo que nenhum dos oito banners de
+referência tem. Descartada.
+
+O que o caso pedia era outra coisa, e mais simples. **A borda da silhueta é o
+problema**, não o fundo: aqueles pixels são uma mistura do produto com o
+branco em que a foto foi tirada, então sobre o azul eles leem como um contorno
+pálido desenhado em volta do produto.
+
+A correção é dar a esses pixels a cor do próprio produto. Quando o recorte é
+escuro — luminância média abaixo de 0,10, medida só sobre os pixels opacos —
+a borda é pintada de quase preto e opaca, e vira borda do produto. Quando é
+claro, ela continua com o desvanecimento suave de antes, que é o que evita
+um degrau serrilhado numa silhueta pálida.
+
+Conferi nos dois: a adega ficou com silhueta limpa, e a geladeira inox não
+mudou em nada.
+
+O prompt de imagem ganhou a mesma regra — mantém a proibição de halo e
+acrescenta que, em produto muito escuro, a borda fica nítida e escura em vez
+de contornada de claro. As duas vias têm que dizer a mesma coisa, senão a
+imagem gerada e a renderizada divergem justamente no caso difícil.
+
+## Não fazer o banner que já existe
+
+O caminho mais barato do sistema: um reuso não faz chamada nenhuma. É também
+o lugar mais fácil de mentir, então todo reuso é validado contra o feed de
+hoje antes de ser permitido.
+
+**A regra é estreita de propósito.** O que o banner **mostra** tem que
+continuar verdade: produto em estoque, mesmo preço, mesma economia. O que ele
+não mostra pode mudar à vontade — um produto que ganhou desconto depois não
+tornou o banner falso, só menos bom, e isso é reportado em vez de tratado
+como falha.
+
+Dois caminhos, nessa ordem.
+
+**Pela semente, antes de gastar qualquer coisa.** Se já existe banner feito
+desta mesma semente, neste idioma, e tudo que ele imprime continua valendo,
+ele é a resposta. Pula escolher, escrever e desenhar.
+
+**Pela lista do matcher.** Depois que o recomendador fala, se algum dos
+produtos que ele ofereceu perto do topo já tem banner válido, esse banner é a
+resposta: só a chamada de escolher foi gasta.
+
+### A primeira regra de negócio que roda de verdade
+
+O limite de posição não é constante no código — é o bloco **"Already has a
+banner"** da faixa de desempate, lido do conjunto de regras a cada execução.
+Desligar o bloco na tela de Regras desliga essa economia e deixa só o reuso
+por semente. Mudar o valor muda quão agressivo ele é.
+
+Esse limite existe por um motivo que não é de economia: sem ele, um banner em
+cache do quinto colocado ganharia de um banner novo do primeiro, e a economia
+estaria comprando uma recomendação pior.
+
+**O reuso é o padrão**, com um opt-out na tela de busca para quando a pessoa
+quer um banner novo de qualquer jeito.
+
+### Medido
+
+Enfileirei a adega `773630` em inglês uma segunda vez, com um banner dela já
+no acervo:
+
+```
+estagio : review
+reuso   : { how: "seed", fromJobId: "7c653702" }
+custo   : 0 chamadas | 0 tokens | $0
+```
+
+Contra os $0,0019 que a mesma peça custou da primeira vez. E a tela diz
+por que: "Already made from this seed on 23 Nov, and every fact it shows
+still holds", com link para o original.
+
+Quando um banner existe e **não** pode ser reaproveitado, o card lista o
+motivo — preço mudou, esgotou, a economia acabou. Silêncio ali pareceria bug.
+
 ## Onde está hoje
 
 | | |
@@ -506,6 +651,15 @@ O resto do feed ele carrega como está.
 | 33 | Eventos por assinatura em processo, webhook mantido | o servidor que roda o fluxo não deveria mandar HTTP para si mesmo |
 | 34 | Jobs em arquivo, quadro por polling | sem Firebase ainda; a forma do documento é a mesma que o Firestore vai receber |
 | 35 | TypeScript 5.9 em vez de 7 | o Next não suporta o 7 em nenhuma etapa, e o 5 achou um erro que o 7 deixou passar |
+| 36 | Tarifas em `prices.json` versionado, não no env | preço é dado de referência: tem que dar pra revisar e pra ver envelhecer |
+| 37 | Tarifa com período de validade | a página lista aumentos agendados; sem data o custo sai errado sem avisar |
+| 38 | Tarifa lida de resumo fica marcada como não confirmada | quatro modelos saíram literais da página, o resto não |
+| 39 | Produto escuro tem a borda pintada de preto, não um halo atrás | a franja clara é mistura com o branco da foto; luz atrás separava e parecia postiça |
+| 40 | Medir antes de consertar | o relato apontava o recorte, e o recorte estava 99,8% certo |
+| 41 | Reuso valida contra o feed, não contra o hash guardado | recarregar o feed passa a valer sem ninguém recalcular nada |
+| 42 | Só o que o banner mostra precisa continuar verdade | desconto novo em produto que não anunciava desconto não torna o banner falso |
+| 43 | A profundidade do reuso vem do conjunto de regras | é a primeira regra de negócio que governa o fluxo de verdade |
+| 44 | Reuso é o padrão, com opt-out | o caro é gerar; quem quer novo pede |
 
 ## O que ainda falta
 

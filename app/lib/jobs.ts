@@ -9,6 +9,9 @@ import type { RecommendResult } from '@/src/mastra/workflows/recommend.js';
 import type { ComposeResult } from '@/src/mastra/workflows/compose.js';
 import type { ArtDirectResult } from '@/src/mastra/workflows/art-direct.js';
 import { get as findProduct } from './search.js';
+import { priceSource } from '@/src/cost/index.js';
+import { forPicks, forSeed, validate, type ReuseHit } from './reuse.js';
+import { loadRules } from './rules.js';
 import type { Job } from './types.js';
 
 export type { Job } from './types.js';
@@ -130,7 +133,7 @@ async function runWorkflow<T>(
 /** One job at a time. The free tier is rate limited, and the board reads better. */
 let chain: Promise<void> = Promise.resolve();
 
-export function enqueue(sku: string, language: Language): Job {
+export function enqueue(sku: string, language: Language, reuseOptOut = false): Job {
   const product = findProduct(sku);
   if (!product) throw new Error(`sku ${sku} is not in the catalogue`);
 
@@ -150,16 +153,68 @@ export function enqueue(sku: string, language: Language): Job {
     brief: null,
     headlineLines: [],
     events: [],
-    cost: { calls: 0, tokens: 0, avoided: 0, byStep: [] },
+    cost: { calls: 0, tokens: 0, avoided: 0, usd: null, rateReadAt: null, byStep: [] },
     png: null,
     error: null,
     rating: null,
     ratingReason: null,
+    reuse: null,
+    reuseRejected: [],
+    reuseOptOut,
   };
   save(job);
 
   chain = chain.then(() => run(job)).catch(() => undefined);
   return job;
+}
+
+/**
+ * Adds one stage's money to the job, and keeps the total null if any stage
+ * could not be priced. A partial total would read as the cost of the banner
+ * when it is the cost of part of it.
+ */
+function addMoney(job: Job, usd: number | null): void {
+  if (usd === null) return;
+  job.cost.usd = (job.cost.usd ?? 0) + usd;
+  job.cost.rateReadAt = priceSource().readAt;
+}
+
+/**
+ * How far down the matcher's list a banner may be reused from.
+ *
+ * This is the first business rule that actually runs. It lives in the rule
+ * set, so turning it off on the Rules screen turns off this saving, and
+ * raising the position changes how aggressive it is. Off by rule means no
+ * reuse from the list at all — only an exact seed hit.
+ */
+function reuseDepth(): number {
+  const rule = loadRules().tieBreak.find((t) => t.id === 'hasBanner');
+  if (!rule?.enabled) return 0;
+  const n = Number(rule.value);
+  return Number.isFinite(n) && n > 0 ? Math.floor(n) : 2;
+}
+
+/**
+ * Takes the banner from an earlier job and makes it this job's answer.
+ *
+ * Nothing is copied that was not already true of that banner: the same image
+ * file, the same brief, the same chosen product. The cost already spent on
+ * this job stays on it, so a seed hit reads as free and a hit found after the
+ * matcher ran reads as the one call it cost.
+ */
+function adopt(job: Job, hit: ReuseHit, note: string): void {
+  const from = hit.job;
+  job.pick = from.pick;
+  job.brief = from.brief;
+  job.headlineLines = from.headlineLines;
+  job.png = from.png;
+  job.reuse = { fromJobId: from.id, how: hit.how, rank: hit.rank, note };
+  /**
+   * A banner a person already approved does not need approving twice; one
+   * that was never rated still wants a look in its new context.
+   */
+  job.stage = from.rating === 'up' ? 'ready' : 'review';
+  save(job);
 }
 
 async function run(job: Job): Promise<void> {
@@ -172,6 +227,27 @@ async function run(job: Job): Promise<void> {
     job.stage = 'choosing';
     save(job);
 
+    /**
+     * Before anything is spent: have we already made a banner from this very
+     * seed, in this language, that is still true today? That hit skips
+     * choosing, writing and drawing, so the run costs nothing at all.
+     */
+    if (!job.reuseOptOut) {
+      const all = listJobs();
+      const hit = forSeed(all, job.seed.sku, job.language, job.id);
+      if (hit) {
+        adopt(job, hit, `Already made from this seed on ${day(hit.job.createdAt)}, and every fact it shows still holds.`);
+        return;
+      }
+      /** Say why a near miss was refused; silence here looks like a bug. */
+      for (const other of all) {
+        if (other.id === job.id || other.seed.sku !== job.seed.sku || other.language !== job.language) continue;
+        if (!other.png) continue;
+        const why = rejectionOf(other);
+        if (why) job.reuseRejected.push(why);
+      }
+    }
+
     const rec = await runWorkflow<RecommendResult>(
       recommendWorkflow,
       { sku: job.seed.sku, validateSeed: true, validatePool: false, verbose: false },
@@ -181,7 +257,13 @@ async function run(job: Job): Promise<void> {
     job.cost.calls += rec.cost.calls;
     job.cost.tokens += rec.cost.totalTokens;
     job.cost.avoided += rec.cost.callsAvoidedByCache;
-    job.cost.byStep.push({ name: 'Choosing the product', calls: rec.cost.calls, tokens: rec.cost.totalTokens });
+    addMoney(job, rec.cost.usd);
+    job.cost.byStep.push({
+      name: 'Choosing the product',
+      calls: rec.cost.calls,
+      tokens: rec.cost.totalTokens,
+      usd: rec.cost.usd,
+    });
 
     const pick = rec.picks[0];
     if (!pick) {
@@ -195,6 +277,25 @@ async function run(job: Job): Promise<void> {
       image: pick.image,
     };
 
+    /**
+     * The matcher has spoken. If one of the products it offered near the top
+     * already has a valid banner, that banner is the answer: writing and
+     * drawing are skipped and only the one call to choose was spent.
+     */
+    const depth = reuseDepth();
+    if (!job.reuseOptOut && depth > 0) {
+      const hit = forPicks(listJobs(), rec.picks, job.language, depth, job.id);
+      if (hit) {
+        const place = hit.rank === 1 ? 'the first choice' : `choice ${hit.rank} of ${rec.picks.length}`;
+        adopt(
+          job,
+          hit,
+          `${place} already had a banner from ${day(hit.job.createdAt)}, and every fact it shows still holds. Reuse is allowed down to position ${depth} by the rule set.`,
+        );
+        return;
+      }
+    }
+
     job.stage = 'writing';
     save(job);
 
@@ -207,7 +308,13 @@ async function run(job: Job): Promise<void> {
     const writeTokens = comp.cost.inputTokens + comp.cost.outputTokens;
     job.cost.calls += comp.cost.calls;
     job.cost.tokens += writeTokens;
-    job.cost.byStep.push({ name: 'Writing and deciding', calls: comp.cost.calls, tokens: writeTokens });
+    addMoney(job, comp.cost.usd);
+    job.cost.byStep.push({
+      name: 'Writing and deciding',
+      calls: comp.cost.calls,
+      tokens: writeTokens,
+      usd: comp.cost.usd,
+    });
 
     if (!comp.copy) throw new Error('the copy did not pass its checks');
 
@@ -235,7 +342,8 @@ async function run(job: Job): Promise<void> {
     const artTokens = art.cost.inputTokens + art.cost.outputTokens;
     job.cost.calls += art.cost.calls;
     job.cost.tokens += artTokens;
-    job.cost.byStep.push({ name: 'Laying out', calls: art.cost.calls, tokens: artTokens });
+    addMoney(job, art.cost.usd);
+    job.cost.byStep.push({ name: 'Laying out', calls: art.cost.calls, tokens: artTokens, usd: art.cost.usd });
     job.headlineLines = art.direction.headlineLines;
 
     if (art.renderError) throw new Error(art.renderError);
@@ -249,4 +357,16 @@ async function run(job: Job): Promise<void> {
     job.error = error instanceof Error ? error.message : String(error);
     save(job);
   }
+}
+
+/** One line saying why an existing banner could not be reused. */
+function rejectionOf(job: Job): string | null {
+  const check = validate(job);
+  if (check.ok) return null;
+  const what = job.pick?.name ?? job.seed.name;
+  return `${what}: ${check.reasons.join('; ')}`;
+}
+
+function day(iso: string): string {
+  return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
 }

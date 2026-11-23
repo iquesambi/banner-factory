@@ -109,6 +109,17 @@ export default function BoardPage() {
   );
 }
 
+/**
+ * Money on the card, tokens only when there is no rate for the model.
+ * A banner costs a fraction of a cent, so cents with two decimals is the
+ * unit that still shows the difference between a cached run and a cold one.
+ */
+function cents(cost: Job['cost']): string {
+  if (cost.usd === null) return `${cost.tokens.toLocaleString('en-GB')} tk`;
+  const c = cost.usd * 100;
+  return c < 1 ? `${c.toFixed(2)}¢` : `$${cost.usd.toFixed(3)}`;
+}
+
 /** A failed job stays in the column it died in, so the failure has a place. */
 function inStage(job: Job, stage: Stage): boolean {
   if (job.stage === stage) return true;
@@ -139,10 +150,11 @@ function JobCard({ job, onChange }: { job: Job; onChange: (job: Job) => void }) 
           <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
             <Badge>{LANGUAGE_LABEL[job.language]}</Badge>
             <span className="tnum text-[11px] text-muted-foreground">
-              {job.cost.calls ? `${job.cost.calls} calls · ${job.cost.tokens.toLocaleString('en-GB')} tk` : 'not started'}
+              {job.cost.calls ? `${job.cost.calls} calls · ${cents(job.cost)}` : 'not started'}
             </span>
             {running && <span className="text-[11px] text-elgi-navy">running…</span>}
             {failed && <Badge tone="amber">needs a look</Badge>}
+            {job.reuse && <Badge tone="green">reused</Badge>}
           </div>
 
           {failed && job.error && (

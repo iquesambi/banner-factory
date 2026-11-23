@@ -38,7 +38,11 @@ export interface JobCost {
   calls: number;
   tokens: number;
   avoided: number;
-  byStep: Array<{ name: string; calls: number; tokens: number }>;
+  /** Null until a rate exists for every model used, never a guess. */
+  usd: number | null;
+  /** The day the price table was read, shown so the figure can be doubted. */
+  rateReadAt: string | null;
+  byStep: Array<{ name: string; calls: number; tokens: number; usd: number | null }>;
 }
 
 export interface Job {
@@ -57,6 +61,19 @@ export interface Job {
   error: string | null;
   rating: 'up' | 'down' | null;
   ratingReason: string | null;
+  /** Set when this job used a banner that already existed instead of making one. */
+  reuse: {
+    fromJobId: string;
+    how: 'seed' | 'pick';
+    /** Where the product sat in the matcher's list. Null for a seed hit. */
+    rank: number | null;
+    /** What the person reading the board needs to understand the swap. */
+    note: string;
+  } | null;
+  /** Why a reuse did NOT happen, when one was looked for and rejected. */
+  reuseRejected: string[];
+  /** The person asked for a fresh banner on this one. */
+  reuseOptOut: boolean;
 }
 
 export const DISLIKE_REASONS = [

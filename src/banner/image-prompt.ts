@@ -152,7 +152,10 @@ export function imagePrompt(
   L.push('- Do not invent any price, saving, percentage, date, claim or word that is not written above.');
   L.push('- Do not add badges, stickers, starbursts, arrows, ribbons or urgency of any kind.');
   L.push('- Do not add people, hands, rooms, furniture or props. The product sits on the gradient alone.');
-  L.push('- Do not add a reflection, a drop shadow or a glow under the product.');
+  L.push('- Do not add a reflection, a drop shadow or a glow under or behind the product.');
+  L.push(
+    '- Where the product is very dark, keep its edge crisp and dark against the navy. Do not lighten the background behind it and do not outline it in a pale colour.',
+  );
   L.push(
     `- Do not letterbox, pad or crop the canvas. The output must be exactly ${CANVAS.width} pixels wide and ${CANVAS.height} pixels tall, not merely close to it.`,
   );

@@ -113,6 +113,37 @@ export default function CardPage({ params }: { params: Promise<{ id: string }> }
             </div>
           </header>
 
+          {job.reuse && (
+            <div className="mx-6 mt-5 rounded-[11px] border border-lime-200 bg-lime-50/60 px-4 py-3.5">
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge tone="green">reused</Badge>
+                <span className="text-[13px] font-semibold text-lime-800">
+                  No banner was made for this run
+                </span>
+                <Link
+                  href={`/board/${job.reuse.fromJobId}`}
+                  className="text-[12.5px] text-lime-800 underline underline-offset-2"
+                >
+                  see the original
+                </Link>
+              </div>
+              <p className="mt-1.5 text-[12.5px] leading-relaxed text-lime-900">{job.reuse.note}</p>
+            </div>
+          )}
+
+          {job.reuseRejected.length > 0 && !job.reuse && (
+            <div className="mx-6 mt-5 rounded-[11px] border bg-secondary/50 px-4 py-3.5">
+              <div className="text-[12.5px] font-semibold text-slate-700">
+                An older banner existed and was not reused
+              </div>
+              <ul className="mt-1 list-inside list-disc text-[12.5px] leading-relaxed text-muted-foreground">
+                {job.reuseRejected.map((r) => (
+                  <li key={r}>{r}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           {job.png && (
             <div className="px-6 pt-5">
               <BannerThumb job={job} className="overflow-hidden rounded-[11px] border" />
@@ -162,7 +193,11 @@ export default function CardPage({ params }: { params: Promise<{ id: string }> }
                   );
                 })}
                 {job.events.length === 0 && (
-                  <li className="px-3.5 py-3 text-[12.5px] text-muted-foreground">waiting to start…</li>
+                  <li className="px-3.5 py-3 text-[12.5px] text-muted-foreground">
+                    {job.reuse
+                      ? 'Nothing ran. The banner already existed and every fact it prints was checked against today\u2019s feed.'
+                      : 'waiting to start\u2026'}
+                  </li>
                 )}
               </ol>
 
@@ -189,13 +224,18 @@ export default function CardPage({ params }: { params: Promise<{ id: string }> }
               <div className="mb-3.5 overflow-hidden rounded-[10px] border">
                 <div className="border-b px-3.5 pb-2.5 pt-3">
                   <h2 className="mb-2 text-[13px] font-semibold">Cost</h2>
+                  {/* The money leads. Tokens are how it was arrived at, not the point. */}
                   <div className="flex items-baseline gap-1.5">
                     <span className="tnum text-[27px] font-semibold tracking-tight">
-                      {job.cost.tokens.toLocaleString('en-GB')}
+                      {job.cost.usd === null ? '—' : money(job.cost.usd)}
                     </span>
-                    <span className="text-[13px] text-muted-foreground">tokens</span>
+                    {job.cost.usd === null && (
+                      <span className="text-[13px] text-muted-foreground">no rate for this model</span>
+                    )}
                   </div>
-                  <div className="mt-0.5 text-[12.5px] text-muted-foreground">{job.cost.calls} model calls</div>
+                  <div className="mt-0.5 text-[12.5px] text-muted-foreground">
+                    {job.cost.tokens.toLocaleString('en-GB')} tokens &middot; {job.cost.calls} model calls
+                  </div>
                 </div>
                 {job.cost.byStep.length > 0 && (
                   <div className="border-b px-3.5 py-2.5">
@@ -203,7 +243,10 @@ export default function CardPage({ params }: { params: Promise<{ id: string }> }
                       <div key={s.name} className="flex items-baseline justify-between gap-2.5 py-0.5">
                         <span className="text-[12.5px] text-slate-600">{s.name}</span>
                         <span className="tnum whitespace-nowrap text-[12.5px]">
-                          {s.calls} · {s.tokens.toLocaleString('en-GB')} tk
+                          {s.usd !== null && <>{money(s.usd)} &middot; </>}
+                          <span className="text-muted-foreground">
+                            {s.tokens.toLocaleString('en-GB')} tk
+                          </span>
                         </span>
                       </div>
                     ))}
@@ -212,6 +255,12 @@ export default function CardPage({ params }: { params: Promise<{ id: string }> }
                       <span className="text-[12.5px]">—</span>
                     </div>
                   </div>
+                )}
+                {job.cost.rateReadAt && (
+                  <p className="border-b px-3.5 py-2 text-[11.5px] leading-relaxed text-muted-foreground">
+                    Text only. Rates read from Google&rsquo;s pricing page on {job.cost.rateReadAt}; image
+                    generation is not in this figure.
+                  </p>
                 )}
                 {job.cost.avoided > 0 && (
                   <div className="flex items-center gap-2 bg-lime-50 px-3.5 py-2.5">
@@ -309,6 +358,16 @@ function Snapshot({ job }: { job: Job }) {
       </p>
     </div>
   );
+}
+
+/**
+ * A banner costs a fraction of a cent in text, so dollars to two places would
+ * read as zero. Cents with three decimals keeps the difference between a
+ * cached run and a cold one visible, which is the point of showing it at all.
+ */
+function money(usd: number): string {
+  const cents = usd * 100;
+  return cents < 1 ? `${cents.toFixed(3)} cents` : `$${usd.toFixed(4)}`;
 }
 
 function ms(n: number): string {

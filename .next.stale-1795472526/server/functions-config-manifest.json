@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "functions": {
+    "/api/jobs/[id]": {},
+    "/api/banners/[file]": {},
+    "/api/rules": {},
+    "/api/search": {},
+    "/api/jobs": {}
+  }
+}

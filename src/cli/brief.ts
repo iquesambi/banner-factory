@@ -177,7 +177,17 @@ function print(
   console.log(`  escolher o produto  ${rec.cost.calls} chamada(s) · ${rec.cost.totalTokens} tokens`);
   console.log(`  escrever e decidir  ${comp.cost.calls} chamada(s) · ${comp.cost.inputTokens + comp.cost.outputTokens} tokens`);
   if (art) console.log(`  direcao de arte     ${artCalls} chamada(s) · ${artTokens} tokens`);
-  console.log(`  total               ${calls} chamada(s) · ${tokens} tokens`);
+  /** Null if any stage lacked a rate: a partial total reads as the whole. */
+  const parts = [rec.cost.usd, comp.cost.usd, art?.cost.usd ?? null];
+  const usd = parts.every((v) => v !== null) ? parts.reduce((a: number, v) => a + (v ?? 0), 0) : null;
+  const money =
+    usd === null
+      ? 'sem tarifa para algum modelo'
+      : usd * 100 < 1
+        ? `${(usd * 100).toFixed(3)} centavo de dolar`
+        : `$${usd.toFixed(4)}`;
+  console.log(`  total               ${calls} chamada(s) · ${tokens} tokens · ${money}`);
+  console.log('  so texto; a geracao de imagem ainda nao entra nesta conta');
   if (rec.cost.callsAvoidedByCache) {
     console.log(`  evitadas por cache  ${rec.cost.callsAvoidedByCache}`);
   }
