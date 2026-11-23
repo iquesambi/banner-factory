@@ -27,8 +27,16 @@ const run = promisify(execFile);
 export const CHROME =
   process.env.CHROME_PATH ?? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 
-/** Repo root, so the HTML can point at brand/fonts with absolute file URLs. */
-const ROOT = resolve(new URL('../..', import.meta.url).pathname);
+/**
+ * Repo root, so the HTML can point at brand/fonts with absolute file URLs.
+ *
+ * Taken from the working directory rather than from `import.meta.url`: a
+ * bundler rewrites `new URL(..., import.meta.url)` into an asset reference
+ * and then fails to resolve `'../..'` as a module, which broke the Next
+ * build. Both entry points — the CLIs and the web server — run from the
+ * repository root, and `BANNER_ROOT` covers anything that does not.
+ */
+const ROOT = resolve(process.env.BANNER_ROOT ?? process.cwd());
 
 /** Official EU energy label colours, A at the top of the scale down to G. */
 const ENERGY_COLORS: Record<string, string> = {
@@ -214,14 +222,19 @@ export function bannerHtml(
   /* Measured at 161x111 and 188x130 in the references, so far bigger than a
      footnote: the arrow alone is roughly 110 tall. */
   .energy { display:flex; align-items:stretch; height:112px; }
+  /* The point is on the LEFT. Measured in both references that carry a label
+     — the coloured shape narrows towards its left edge and is flat on the
+     right, where the A-to-G box sits. I had drawn it the other way round,
+     and only noticed when an image model drew it correctly from the same
+     brief and disagreed with my own prompt. */
   .energy .arrow { position:relative; background:var(--c); color:#fff; font-weight:600;
-                   font-size:62px; line-height:112px; padding:0 10px 0 22px; }
-  .energy .arrow::after { content:""; position:absolute; right:-56px; top:0; width:0; height:0;
-                          border-top:56px solid transparent; border-bottom:56px solid transparent;
-                          border-left:56px solid var(--c); }
+                   font-size:62px; line-height:112px; padding:0 22px 0 10px; margin-left:56px; }
+  .energy .arrow::before { content:""; position:absolute; left:-56px; top:0; width:0; height:0;
+                           border-top:56px solid transparent; border-bottom:56px solid transparent;
+                           border-right:56px solid var(--c); }
   .energy .scale { display:flex; flex-direction:column; align-items:center; justify-content:center;
                    background:#fff; color:#111; font-size:26px; font-weight:600; line-height:1.1;
-                   padding:0 10px; border-radius:2px; margin-left:62px; }
+                   padding:0 10px; border-radius:2px; margin-left:4px; }
   .bar { background:${p.yellow}; color:${p.navyDark}; font-family:"ElkHead", system-ui, sans-serif;
          font-size:44px; line-height:1; padding:13px 22px; text-transform:uppercase; }
   .circle { background:${p.pink}; color:${p.white}; font-weight:600; font-size:30px; text-align:center;

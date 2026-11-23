@@ -5,7 +5,7 @@ The attached photograph is the product. Use it as it is: do not redraw it, do no
 Product: Samsung French Door Kølefryseskab RF65DG9H0ESREF (rustfrit stål).
 
 ## Brand
-Background: a navy gradient, #0e2d7c at its lightest and #041752 at its darkest, brightest along a band running from the top left corner to the bottom right corner and darkening towards the other two corners. No pattern, no texture, no vignette.
+Background: one smooth navy gradient across the whole canvas, with no visible edge, seam, facet or band anywhere in it. The top left corner and the bottom right corner are #0e2d7c; the top right corner and the bottom left corner are #041752; everything between them shades gradually. No pattern, no texture, no vignette.
 Brand green: #77be24. Deep green, used only for the button's shadow: #096729. Pink: #ed3089. Yellow: #fdf100. Text white: #ffffff.
 Typefaces: a condensed heavy grotesque for the headline and the price, set in capitals; a clean humanist sans for the supporting line and the small text. No serifs anywhere, no script, no outlines, no gradients on type.
 No logo anywhere on the banner. No watermark, no signature, no border, no frame.

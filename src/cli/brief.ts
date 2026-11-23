@@ -77,6 +77,16 @@ async function start<T>(workflow: { createRun: unknown }, inputData: unknown, la
 
 const rule = (s = '') => console.log(`\n${s}${'─'.repeat(Math.max(0, 76 - s.length))}`);
 
+/** Breaking at the accent is the one split that is always defensible. */
+function fallbackLayout(brief: ArtDirectorBrief) {
+  const { headline, accent } = brief.copy;
+  const at = accent ? headline.indexOf(accent) : -1;
+  const lines = at > 0
+    ? [headline.slice(0, at).trim(), headline.slice(at).trim()].filter(Boolean)
+    : [headline];
+  return { headlineLines: lines, productScale: 'large' as const, rationale: 'layout de reserva' };
+}
+
 function print(
   brief: ArtDirectorBrief,
   rec: RecommendResult,
@@ -234,24 +244,42 @@ for (const seedSku of skus) {
     });
 
     let art: ArtDirectResult | null = null;
+    let artError: string | null = null;
     if (!has('no-render')) {
       if (verbose) console.log(`\n── desenhando o banner ${'─'.repeat(50)}`);
-      art = await start<ArtDirectResult>(
-        artDirectWorkflow,
-        { brief, outDir: pngDir, name: `${pick.sku}-${language}`, verbose },
-        'art-direct',
-      );
+      try {
+        art = await start<ArtDirectResult>(
+          artDirectWorkflow,
+          { brief, outDir: pngDir, name: `${pick.sku}-${language}`, verbose },
+          'art-direct',
+        );
+      } catch (error) {
+        /**
+         * The art direction is the last and cheapest step, and by the time it
+         * runs the recommendation and the copy have already been paid for. A
+         * run that threw here used to discard all of it, which is how a
+         * depleted account cost a brief that was finished and correct.
+         */
+        artError = error instanceof Error ? error.message : String(error);
+      }
     }
 
     briefs.push(brief);
     print(brief, rec, comp, art);
+    if (artError) console.log(`\n  a direcao de arte falhou: ${artError}\n  o briefing abaixo esta completo e foi gravado`);
 
-    if (has('image-prompt') && art) {
+    if (has('image-prompt')) {
       /**
        * The prompt is built from the same brief the renderer uses, so the two
        * can never describe different banners.
        */
-      const text = imagePrompt(brief, art.direction, promptMode);
+      /**
+       * Without the art director there is still a defensible layout: break at
+       * the accent and show the product large. The prompt is worth having even
+       * when the last model call could not be made.
+       */
+      const direction = art?.direction ?? fallbackLayout(brief);
+      const text = imagePrompt(brief, direction, promptMode);
       const file = `${outDir}/${pick.sku}-${language}-${promptMode}.prompt.txt`;
       writeFileSync(file, text);
       console.log(`\n${'█'.repeat(76)}`);

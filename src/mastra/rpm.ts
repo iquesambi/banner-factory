@@ -40,6 +40,18 @@ export function retryPlanFor(error: unknown, attempt: number): RetryPlan | null 
   const msg = error instanceof Error ? error.message : String(error);
   const status = (error as { statusCode?: number } | null)?.statusCode;
 
+  /**
+   * An exhausted account is not a rate limit, however much the message looks
+   * like one. Gemini answers a spent balance with 429 and the words "You
+   * exceeded your current quota, please check your plan and billing details"
+   * before it finally answers 402, so a run spent a full minute waiting
+   * politely for credits to reappear. Waiting cannot help here: the next
+   * attempt fails for the same reason, and the only fix is off this machine.
+   */
+  if (status === 402 || /prepayment|credits are depleted|billing details|check your plan/i.test(msg)) {
+    return null;
+  }
+
   if (/quota|rate.?limit|429/i.test(msg) || status === 429) {
     const m = msg.match(/retry in ([\d.]+)s/i);
     return { kind: 'rate-limit', delayMs: m ? Math.ceil(Number(m[1]) * 1000) + 500 : 20_000 };

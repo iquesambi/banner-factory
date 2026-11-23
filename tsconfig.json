@@ -3,14 +3,24 @@
     "target": "ES2022",
     "module": "ESNext",
     "moduleResolution": "bundler",
-    "lib": ["ES2023"],
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
     "types": ["node"],
     "strict": true,
     "noUncheckedIndexedAccess": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "resolveJsonModule": true,
-    "noEmit": true
+    "allowJs": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "incremental": true,
+    "noEmit": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./*"]
+    },
+    "plugins": [{ "name": "next" }]
   },
-  "include": ["src/**/*.ts"]
+  "include": ["globals.d.ts", "next-env.d.ts", "src/**/*.ts", "app/**/*.ts", "app/**/*.tsx", "components/**/*.tsx", ".next/types/**/*.ts"],
+  "exclude": ["node_modules"]
 }

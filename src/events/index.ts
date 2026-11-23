@@ -54,6 +54,34 @@ export interface EventsOptions {
   logger?: StageLogger | undefined;
 }
 
+/**
+ * In-process listeners, keyed by run id.
+ *
+ * The webhook is for anything outside this process. The front end runs the
+ * workflows in its own server, so posting an HTTP request to itself just to
+ * read back an event it already has would add latency and a failure mode for
+ * nothing. A caller that holds the run id — `createRun()` hands it over
+ * before `start()` — subscribes here instead.
+ */
+type RunEventListener = (event: RunEvent) => void;
+const listeners = new Map<string, Set<RunEventListener>>();
+
+/** Returns the unsubscribe function; always call it, or the run leaks. */
+export function onRunEvent(runId: string, fn: RunEventListener): () => void {
+  let set = listeners.get(runId);
+  if (!set) {
+    set = new Set();
+    listeners.set(runId, set);
+  }
+  set.add(fn);
+  return () => {
+    const live = listeners.get(runId);
+    if (!live) return;
+    live.delete(fn);
+    if (!live.size) listeners.delete(runId);
+  };
+}
+
 export class RunEvents {
   private events: RunEvent[] = [];
   private pending: Promise<void>[] = [];
@@ -86,6 +114,13 @@ export class RunEvents {
         this.opts.logger.debug(`event ${stage}`, event);
       } else {
         console.log(`  ${line}`);
+      }
+    }
+    /** A listener that throws must not take the run down with it. */
+    const subscribed = listeners.get(this.runId);
+    if (subscribed) {
+      for (const fn of subscribed) {
+        try { fn(event); } catch { /* a reader's problem, not the run's */ }
       }
     }
     if (this.webhookUrl) this.pending.push(this.post(this.webhookUrl, event));

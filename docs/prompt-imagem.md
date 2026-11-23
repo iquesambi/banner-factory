@@ -91,6 +91,41 @@ O que eu olharia primeiro, em ordem:
 
 ---
 
+## O primeiro teste de verdade
+
+Rodado no Gemini pelo navegador, com a foto anexada, na geladeira Samsung.
+
+**O texto saiu perfeito.** Era exatamente o que eu tinha apontado como risco, e
+não aconteceu: título nas três linhas, destaque em verde na frase certa,
+`kølefryseskab`, `rustfrit stål`, `madvarer`, o botão, o nome do modelo
+`RF65DG9H0ESREF` — e o preço `37.998,-` com os dígitos certos. Nada inventado.
+
+**E ele achou um erro meu.** O prompt mandava desenhar a seta do selo de
+energia apontando para a direita. O Gemini desenhou para a esquerda. Fui medir
+nos dois banners de referência que têm o selo: a forma colorida se afina para a
+**esquerda** e é reta do lado direito, onde encosta a caixa A↑G. O modelo estava
+certo e eu estava errado, nos dois lugares — no prompt e no meu renderizador
+HTML, que desenhava a seta invertida desde o começo. Corrigidos os dois.
+
+O que saiu errado, medido:
+
+| | pedido | veio |
+|---|---|---|
+| tamanho | 2048×768 | **2000×736** |
+| fundo | gradiente de `#041752` a `#0e2d7c` | quase todo `#05194c`, com uma emenda diagonal dura |
+| verde | `#77be24` | `#78b529` |
+| faixa lateral | selo e preço centrados juntos | selo colado no topo, preço bem abaixo |
+
+O fundo é o pior dos quatro: o gradiente perdeu quase toda a amplitude e virou
+um bloco escuro com uma dobra visível. Os exemplos têm os dois extremos
+presentes em quantidade; o gerado tem só o escuro.
+
+O prompt foi endurecido nos três pontos — tamanho exato em vez de aproximado,
+as quatro cores de canto nomeadas uma a uma, e proibição explícita de emenda ou
+bloco de cor no fundo.
+
+---
+
 ## Integração depois
 
 Quando você puser a chave paga, isso vira um quarto passo no workflow, no mesmo

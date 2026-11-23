@@ -314,6 +314,71 @@ renderização. Artefato de pintura intermitente é pior que um fixo, porque
 passa despercebido: o fundo padrão do Chrome passou a ser o azul escuro do
 próprio banner, então o mesmo escorregão fica invisível.
 
+## A interface, em Next.js
+
+As cinco telas desenhadas viraram aplicação, ligada nos agentes e workflows
+que já existiam. Nada do motor foi reescrito: `app/` chama `src/` direto.
+
+| rota | o que faz |
+|---|---|
+| `/` | busca por nome **e SKU** nos 28.231 produtos, fila de cards com idioma |
+| `/board` | quadro kanban, cards andando pelas colunas conforme os eventos |
+| `/board/[id]` | o card aberto: passo a passo, custo por etapa, banner, polegares |
+| `/rules` | as três faixas e o laboratório de ensaio |
+| `/banners` | o acervo, com validade conferida contra o feed de hoje |
+
+### Como os eventos chegam na tela
+
+O fluxo já emitia um evento por etapa e sabia mandar para webhook. Para a
+interface, que roda no mesmo processo, pedir por HTTP ao próprio servidor
+seria latência e um modo de falha a troco de nada. Então `src/events`
+ganhou **assinatura em processo**: `onRunEvent(runId, fn)`.
+
+O que torna isso possível é que `createRun()` devolve o `runId` **antes** do
+`start()`, então dá para assinar enquanto o primeiro evento ainda não
+aconteceu. O webhook continua lá, para quem está fora do processo.
+
+A tela, por enquanto, faz *polling* de um segundo. O desenho previa o
+Firestore recebendo o webhook e o cliente escutando o documento; a troca é um
+hook quando o Firebase existir.
+
+### Quatro defeitos que só o build encontrou
+
+**`createRun` perdeu o receptor.** Nos CLIs eu escrevia
+`(workflow.createRun as T)()` — parênteses em torno de um acesso a membro
+**não** desligam o receptor, então funcionava. No runner eu guardei em
+variável, e aí desligou: o Mastra morreu em
+`Cannot read properties of undefined (reading 'takeNestedRun')`, porque
+`createRun` lê um campo privado. Um erro que só aparece quando o mesmo código
+muda de forma.
+
+**`new URL('../..', import.meta.url)`** no renderizador: o webpack reescreve
+esse padrão como referência a arquivo e depois falha ao resolver `'../..'`
+como módulo. A raiz passa a vir de `process.cwd()`, com `BANNER_ROOT` para
+quem rodar de outro lugar.
+
+**O `next.config.ts` não carrega.** O Next lê um config TypeScript pela API
+do compilador, e o compilador 7 não a expõe. Virou `.mjs`.
+
+**O projeto estava no TypeScript 7**, que o Next não suporta em lugar nenhum
+do seu pipeline. Desci para 5.9.3 e o motor inteiro continua passando — e o
+compilador 5 ainda achou um erro de verdade que o 7 deixou passar: uma página
+do Next não pode exportar nada além da página, e eu exportava um componente
+de dentro de `app/page.tsx`.
+
+### O que não está pronto, e é bom dizer
+
+- **Um banner completo precisa de crédito na API.** A corrente roda inteira e
+  para no 402 da conta, que aparece em uma linha no card.
+- **As regras não estão ligadas no fluxo.** O laboratório lê o catálogo real e
+  fala a verdade sobre ele — ligar `Minimum stock 25+` zera a geladeira e risca
+  os 12 candidatos na hora, sem gastar chamada — mas o `recommend` ainda monta
+  a pool com as mesmas regras no código.
+- **Sem Firebase.** Não há login, as execuções ficam em arquivo e o quadro
+  consulta em vez de escutar.
+- **Os blocos não arrastam**: ligam e desligam. A ordem dentro da faixa não
+  muda nada hoje, então arrastar seria enfeite.
+
 ## Onde está hoje
 
 | | |
@@ -437,6 +502,10 @@ O resto do feed ele carrega como está.
 | 29 | Tamanhos de selo, barra e preço vêm de medição | eu tinha feito o selo de energia com um terço do tamanho real |
 | 30 | Prompt de imagem é montado do briefing, não escrito à mão | redator muda uma palavra e o prompt muda junto, sem ninguém lembrar |
 | 31 | Dois modos: `full` e `scene` | em `full` o preço passa a ser desenhado por um modelo; `scene` deixa os números no código |
+| 32 | A seta do selo de energia aponta para a ESQUERDA | medido nos dois exemplos que têm selo; eu desenhava invertido no HTML e mandava invertido no prompt |
+| 33 | Eventos por assinatura em processo, webhook mantido | o servidor que roda o fluxo não deveria mandar HTTP para si mesmo |
+| 34 | Jobs em arquivo, quadro por polling | sem Firebase ainda; a forma do documento é a mesma que o Firestore vai receber |
+| 35 | TypeScript 5.9 em vez de 7 | o Next não suporta o 7 em nenhuma etapa, e o 5 achou um erro que o 7 deixou passar |
 
 ## O que ainda falta
 

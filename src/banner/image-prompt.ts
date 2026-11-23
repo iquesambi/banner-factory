@@ -35,7 +35,7 @@ function badgeLine(
   language: Language,
 ): string {
   if (b.kind === 'energy') {
-    return `EU energy label, class ${b.value}: a coloured arrow pointing right with the class letter in white, and a small white box beside it reading A at the top, an up arrow, G at the bottom. About 170 by 112 pixels.`;
+    return `EU energy label, class ${b.value}: a coloured arrow POINTING LEFT with the class letter in white — the shape narrows to a point on its left edge and is flat on its right edge — and immediately to its right a small white box reading A at the top, an up arrow, G at the bottom. About 170 by 112 pixels.`;
   }
   if (b.kind === 'saving' && b.amount !== undefined) {
     return `A solid yellow ${PALETTE.yellow} bar with dark navy text reading exactly "${SAVE_WORD[language]} ${priceText(b.amount)}". About 330 by 75 pixels.`;
@@ -71,7 +71,7 @@ export function imagePrompt(
   L.push('');
 
   L.push('## Brand');
-  L.push(`Background: a navy gradient, ${p.navyLight} at its lightest and ${p.navyDark} at its darkest, brightest along a band running from the top left corner to the bottom right corner and darkening towards the other two corners. No pattern, no texture, no vignette.`);
+  L.push(`Background: one smooth navy gradient across the whole canvas, with no visible edge, seam, facet or band anywhere in it. The top left corner and the bottom right corner are ${p.navyLight}; the top right corner and the bottom left corner are ${p.navyDark}; everything between them shades gradually. No pattern, no texture, no vignette.`);
   L.push(`Brand green: ${p.green}. Deep green, used only for the button's shadow: ${p.greenDeep}. Pink: ${p.pink}. Yellow: ${p.yellow}. Text white: ${p.white}.`);
   L.push('Typefaces: a condensed heavy grotesque for the headline and the price, set in capitals; a clean humanist sans for the supporting line and the small text. No serifs anywhere, no script, no outlines, no gradients on type.');
   L.push('No logo anywhere on the banner. No watermark, no signature, no border, no frame.');
@@ -153,7 +153,10 @@ export function imagePrompt(
   L.push('- Do not add badges, stickers, starbursts, arrows, ribbons or urgency of any kind.');
   L.push('- Do not add people, hands, rooms, furniture or props. The product sits on the gradient alone.');
   L.push('- Do not add a reflection, a drop shadow or a glow under the product.');
-  L.push('- Do not letterbox, pad or crop the canvas to another aspect ratio.');
+  L.push(
+    `- Do not letterbox, pad or crop the canvas. The output must be exactly ${CANVAS.width} pixels wide and ${CANVAS.height} pixels tall, not merely close to it.`,
+  );
+  L.push('- Do not put a hard edge, seam, facet or colour block in the background. It is one continuous gradient.');
 
   return L.join('\n');
 }
