@@ -12,7 +12,9 @@
     "typecheck": "tsc --noEmit",
     "recommend": "node --env-file-if-exists=.env --import tsx src/cli/recommend.ts",
     "runs": "node --env-file-if-exists=.env --import tsx src/cli/runs.ts",
-    "report": "node --import tsx src/cli/report-runs.ts"
+    "report": "node --import tsx src/cli/report-runs.ts",
+    "compose": "node --env-file-if-exists=.env --import tsx src/cli/compose.ts",
+    "brief": "node --env-file-if-exists=.env --import tsx src/cli/brief.ts"
   },
   "dependencies": {
     "@ai-sdk/google": "^4.0.124",

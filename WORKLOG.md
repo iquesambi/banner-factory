@@ -125,6 +125,70 @@ nunca mais de um nível de diferença.** Para um atributo sem gabarito, isso é 
 que importa — a régua não precisa estar certa no absoluto, precisa ser a mesma
 sempre, porque eu só uso ela para comparar semente com candidato.
 
+## Depois de escolher o produto, escrever o banner
+
+Dois agentes novos, nessa ordem: o **redator** escreve título, subtítulo e
+botão, e o **diretor de estratégia** olha o que foi escrito e decide quais
+selos entram. O diretor de arte e o revisor vêm depois e ainda não existem.
+
+A ordem não é arbitrária. O guia de copy da marca pede que cada linha carregue
+a própria ideia e que elas não se repitam. Um selo de economia ao lado de um
+título que já diz "economize 24.000" quebra essa regra do mesmo jeito que duas
+linhas iguais quebrariam, e só quem leu o texto consegue perceber. Rodando o
+estrategista depois do redator, ele pega isso — e pegou, no primeiro teste.
+
+### A camada de verdade é código, não prompt
+
+O briefing exige que tudo no banner seja verdade. Exigência que não admite
+exceção não vai para um texto que o modelo reinterpreta. Então
+`src/banner/facts.ts` decide o que **pode** existir, e o modelo decide o que
+**vale a pena**. É a mesma divisão das regras de negócio.
+
+O que a camada bloqueia, medido neste catálogo:
+
+| situação | quantos | o que acontece |
+|---|---|---|
+| feed discorda de si mesmo sobre a economia | 56 | nenhum selo de economia |
+| preço anterior menor que o atual | 3 | idem, com a razão explícita |
+| `Klubpris` | 17 | preço de membro só com a condição escrita junto |
+| `Maks n` | 11 | vira restrição que a copy não pode contradizer |
+| `Pris ex. Pant`, `Uden frontplade` | 12 | idem |
+
+E uma checagem que transforma "nunca invente um preço" em algo verificável:
+todo número que aparece na copy é comparado com a lista de números permitidos
+— o preço, a economia, o preço anterior e os números do próprio nome do
+produto. Número sem fato por trás reprova o rascunho, e o redator é chamado de
+novo com o motivo da reprovação, não com o mesmo pedido.
+
+### O que os testes mostraram
+
+A TV TCL de 85", que tem energia e economia consistente: o redator escreveu
+"Spar 24000 kr på det store TCL 85" TV" (37 caracteres) e o estrategista
+**recusou o selo de economia**, dizendo que o título já carregava. Deixou só o
+selo de energia. Duas chamadas, 1.865 tokens.
+
+O teclado SteelSeries com `Klubpris`, que é o caso mais difícil do catálogo:
+título "SteelSeries Apex Pro TKL Gen 3 til 1499 kr for medlemmer", subtítulo
+dizendo que custa 2299 sem associação, e letra miúda com a condição. Os dois
+números verdadeiros e a condição explícita.
+
+A caixa de Pokémon com limite de 3 por cliente: nenhum selo disponível, então o
+estrategista **não foi chamado** — uma chamada só. O subtítulo cita o limite em
+vez de ignorá-lo.
+
+### Um vazamento que só apareceu rodando
+
+O banner em inglês voltou com o botão **"Køb nu"**, em dinamarquês. Depois, o
+sueco escreveu "Spar" em vez de "Spara". Dinamarquês e sueco são próximos o
+bastante para as palavras atravessarem sem parecer erradas — para um sueco
+parecem.
+
+O botão virou vocabulário fechado por idioma, validado em código, porque é o
+único campo que não carrega fato nenhum e a marca repete as mesmas palavras em
+todo banner. O resto foi resolvido nomeando a armadilha no prompt: spara e não
+spar, erbjudande e não tilbud, ö e ä onde o dinamarquês usa ø e æ. Depois
+disso, "Spara 24000 kr".
+
 ## Onde está hoje
 
 | | |
@@ -232,6 +296,10 @@ O resto do feed ele carrega como está.
 | 13 | Nível guardado na base com a categoria em que foi julgado | só é comparável ali; se a categoria muda, o nível vence |
 | 14 | Storage do Mastra para o histórico de execuções | o catálogo continua em NDJSON porque eu leio na mão; o que o motor fez, não |
 | 15 | Variante exata ignora o parêntese inteiro, material incluído | cadeira de tecido entra como variante da de couro; perguntei e a resposta foi deixar como está |
+| 16 | O que pode ir no banner é código; o que vale a pena é prompt | verdade do briefing não admite reinterpretação, e escolha editorial não cabe em regra |
+| 17 | Estrategista roda depois do redator e lê a copy | selo que repete o título desperdiça o único espaço que carregaria uma segunda ideia |
+| 18 | Botão sai de lista fechada por idioma | banner em inglês voltou com botão em dinamarquês, e nenhuma instrução evitou |
+| 19 | Rascunho reprovado volta com o motivo, não com o mesmo pedido | pedir de novo igual reproduz o mesmo rascunho |
 
 ## O que ainda falta
 
@@ -277,6 +345,25 @@ Vários de uma vez, e cada um grava um .json completo em `.cache/runs/`:
 
 ```bash
 npm run recommend -- 1116833 498120 802582
+```
+
+A corrente inteira, que e o teste de ponta a ponta — semente entra, briefing
+do diretor de arte sai:
+
+```bash
+npm run brief -- 802582 --no-validate-pool
+```
+
+Escrever a copy e decidir os selos de um produto:
+
+```bash
+npm run compose -- 1083310
+```
+
+Nos três idiomas de uma vez:
+
+```bash
+npm run compose -- 1083310 --lang=da --lang=sv --lang=en
 ```
 
 As execuções anteriores, lidas do storage do Mastra:

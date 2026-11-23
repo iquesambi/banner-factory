@@ -19,6 +19,10 @@ export type RunStage =
   | 'model.fallback'
   | 'recommend.pass1'
   | 'recommend.pass2'
+  | 'facts.built'
+  | 'copy.written'
+  | 'copy.rejected'
+  | 'strategy.decided'
   | 'run.completed'
   | 'run.failed';
 
