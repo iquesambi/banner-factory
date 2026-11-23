@@ -58,6 +58,14 @@ export function tagCatalog(
       categoryMargin: guess?.margin ?? null,
       categoryMethod: guess?.kind ?? null,
       categoryCandidates: guess?.candidates ?? [],
+      // Tier costs a model call and is filled lazily, per category, the first
+      // time a product from it is actually needed. A full tagging pass never
+      // produces one; tag-catalog carries existing ones over instead.
+      tier: null,
+      tierConfidence: null,
+      tierBy: null,
+      tierAt: null,
+      tierCategory: null,
       status: guess ? 'auto' : 'unresolved',
       validatedAt: null,
       validatedBy: null,

@@ -33,6 +33,7 @@ const rebuild = createStep({
     taxonomyVersion: z.string(),
     durationMs: z.number(),
     carriedOverValidations: z.number(),
+    carriedOverTiers: z.number(),
     stats: statsSchema,
   }),
   execute: async ({ inputData }) => {
@@ -44,6 +45,8 @@ const rebuild = createStep({
     const store = new TagStore(inputData.storeDir);
     let carriedOver = 0;
 
+    let carriedTiers = 0;
+
     if (inputData.preserveValidated && store.exists()) {
       const previous = new TagStore(inputData.storeDir).load();
       for (const p of products) {
@@ -53,14 +56,35 @@ const rebuild = createStep({
           (old.status === 'validated' || old.status === 'corrected') &&
           old.taxonomyVersion === taxonomy.version &&
           old.name === p.name;
-        if (!stillValid) continue;
-        p.category = old.category;
-        p.categoryMethod = old.categoryMethod;
-        p.status = old.status;
-        p.validatedAt = old.validatedAt;
-        p.validatedBy = old.validatedBy;
-        p.validationNote = old.validationNote;
-        carriedOver++;
+        if (stillValid) {
+          p.category = old.category;
+          p.categoryMethod = old.categoryMethod;
+          p.status = old.status;
+          p.validatedAt = old.validatedAt;
+          p.validatedBy = old.validatedBy;
+          p.validationNote = old.validationNote;
+          carriedOver++;
+        }
+
+        /**
+         * Tier is carried separately, and on a stricter condition: it is only
+         * meaningful inside the category it was judged in, so it survives only
+         * while the product keeps that exact category. It is independent of
+         * validation status — an `auto` product can hold a valid tier — but a
+         * renamed product loses it, since the name is all the model saw.
+         */
+        if (
+          old.tier !== null && old.tier !== undefined &&
+          old.name === p.name &&
+          old.tierCategory === p.category
+        ) {
+          p.tier = old.tier;
+          p.tierConfidence = old.tierConfidence;
+          p.tierBy = old.tierBy;
+          p.tierAt = old.tierAt;
+          p.tierCategory = old.tierCategory;
+          carriedTiers++;
+        }
       }
     }
 
@@ -76,6 +100,7 @@ const rebuild = createStep({
       taxonomyVersion: taxonomy.version,
       durationMs: Date.now() - startedAt,
       carriedOverValidations: carriedOver,
+      carriedOverTiers: carriedTiers,
       stats,
     };
   },

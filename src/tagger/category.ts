@@ -64,6 +64,17 @@ export class CategoryTagger {
 
   constructor(private taxonomy: Taxonomy) {
     for (const cat of taxonomy.categories) {
+      /**
+       * A department root is not a product category and must never be an
+       * answer. The taxonomy lists `gaming` as a path, and because "gaming"
+       * appears in the name of every gaming chair, monitor and laptop, this
+       * term alone filed 207 products into the department root — a drawer with
+       * no products of a kind in it. Recommendation keys off the category, so
+       * landing there is worse than landing nowhere: nowhere gets narrowed to a
+       * leaf by the validator, while a department reads as a real answer.
+       */
+      if (!cat.path.includes('/')) continue;
+
       const tw = tokenize(cat.slug.replace(/-/g, ' '));
       if (!tw.length) continue;
 

@@ -63,6 +63,22 @@ export class TagStore {
     return p.status === 'auto' || p.status === 'unresolved' || p.status === 'raw';
   }
 
+  /** Everything filed under one category path. */
+  byCategory(path: string) {
+    return [...this.products.values()].filter((p) => p.category === path);
+  }
+
+  /**
+   * A tier is only comparable inside the category it was judged in, so a
+   * product whose category moved needs a new one even though it has a value.
+   */
+  needsTier(p: TaggedProduct) {
+    // Loose null check on purpose: records written before tier existed have
+    // the field absent, not null, and those need a tier just the same.
+    if (p.tier === null || p.tier === undefined) return true;
+    return p.tierCategory !== p.category;
+  }
+
   statusCounts(): Record<string, number> {
     const out: Record<string, number> = {};
     for (const p of this.products.values()) out[p.status] = (out[p.status] ?? 0) + 1;

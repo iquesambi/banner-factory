@@ -31,6 +31,17 @@ export interface RawProduct {
  */
 export type TagStatus = 'raw' | 'auto' | 'unresolved' | 'validated' | 'corrected';
 
+/**
+ * How premium a product is WITHIN its own category: 0 entry, 1 mid,
+ * 2 premium, 3 luxury.
+ *
+ * Unlike category and brand this has no ground truth — two reasonable people
+ * disagree on where a mid-high product sits. It survives that because it is
+ * only ever read relatively (is this candidate near the seed?), so the scale
+ * has to be internally consistent, not objectively right.
+ */
+export type Tier = 0 | 1 | 2 | 3;
+
 export interface TaggedProduct {
   sku: string;
   name: string;
@@ -54,6 +65,17 @@ export interface TaggedProduct {
   categoryMargin: number | null;
   categoryMethod: 'synonym' | 'phrase' | 'exact' | 'compound' | 'llm' | null;
   categoryCandidates: string[];
+
+  // --- premium tier, filled lazily when the category is first touched
+  tier: Tier | null;
+  tierConfidence: 'high' | 'low' | null;
+  tierBy: string | null;
+  tierAt: string | null;
+  /**
+   * The category the tier was judged inside. A tier means nothing outside it,
+   * so if the category later changes the tier is stale and must be redone.
+   */
+  tierCategory: string | null;
 
   // --- validation state
   status: TagStatus;

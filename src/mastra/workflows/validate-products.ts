@@ -4,6 +4,8 @@ import { loadTaxonomy } from '../../taxonomy/index.js';
 import { TagStore } from '../../store/index.js';
 import type { TaggedProduct } from '../../types.js';
 import { categoryValidator, hasApiKey, VALIDATOR_MODEL } from '../agents/category-validator.js';
+import { RPM_LIMIT, RpmThrottle, retryPlanFor } from '../rpm.js';
+import { readUsage } from '../../cost/index.js';
 
 /**
  * Several products per request. This started as a token optimisation and turned
@@ -11,7 +13,6 @@ import { categoryValidator, hasApiKey, VALIDATOR_MODEL } from '../agents/categor
  * minute, so one call per product cannot clean a recommendation list.
  */
 const BATCH_SIZE = 10;
-const RPM_LIMIT = 15;
 const MAX_RETRIES = 3;
 
 const batchAnswerSchema = z.object({
@@ -38,35 +39,13 @@ const outcomeSchema = z.object({
 
 export type ValidationOutcome = z.infer<typeof outcomeSchema>;
 
-function optionsFor(product: TaggedProduct, departments: string[]): string[] {
-  if (product.categoryCandidates.length) return product.categoryCandidates;
-  return departments;
+interface Entry {
+  product: TaggedProduct;
+  options: string[];
 }
 
-/** Keeps the whole run under the provider's requests-per-minute ceiling. */
-class RpmThrottle {
-  private times: number[] = [];
-  constructor(private limit: number) {}
-  async take() {
-    for (;;) {
-      const now = Date.now();
-      this.times = this.times.filter((t) => now - t < 60_000);
-      if (this.times.length < this.limit) {
-        this.times.push(now);
-        return;
-      }
-      const waitMs = 60_000 - (now - this.times[0]!) + 250;
-      await new Promise((r) => setTimeout(r, waitMs));
-    }
-  }
-}
-
-function retryDelayFrom(error: unknown): number | null {
-  const msg = error instanceof Error ? error.message : String(error);
-  if (!/quota|rate.?limit|429/i.test(msg)) return null;
-  const m = msg.match(/retry in ([\d.]+)s/i);
-  return m ? Math.ceil(Number(m[1]) * 1000) + 500 : 20_000;
-}
+/** A bare department is a drawer, not a category. Never write one. */
+const isUsableCategory = (path: string) => path.includes('/');
 
 const validate = createStep({
   id: 'validate-products',
@@ -88,6 +67,11 @@ const validate = createStep({
     stillUnresolved: z.number(),
     errors: z.number(),
     requests: z.number(),
+    /** Measured token use, so the caller can put this on the bill. */
+    usage: z.object({
+      inputTokens: z.number(),
+      outputTokens: z.number(),
+    }),
     skippedNoApiKey: z.boolean(),
     durationMs: z.number(),
     outcomes: z.array(outcomeSchema),
@@ -97,11 +81,19 @@ const validate = createStep({
     const taxonomy = loadTaxonomy(inputData.taxonomyDir);
     const store = new TagStore(inputData.storeDir).load();
     const departments = [...new Set(taxonomy.categories.map((c) => c.department))];
+    const categoriesByDepartment = new Map<string, string[]>();
+    for (const c of taxonomy.categories) {
+      const list = categoriesByDepartment.get(c.department) ?? [];
+      list.push(c.path);
+      categoriesByDepartment.set(c.department, list);
+    }
     const throttle = new RpmThrottle(RPM_LIMIT);
 
     const outcomes: ValidationOutcome[] = [];
     let alreadyClean = 0;
     let requests = 0;
+    let inputTokens = 0;
+    let outputTokens = 0;
     const noKey = !hasApiKey();
 
     const queue: Array<{ product: TaggedProduct; options: string[] }> = [];
@@ -127,7 +119,8 @@ const validate = createStep({
         });
         continue;
       }
-      queue.push({ product, options: optionsFor(product, departments) });
+      // No candidates means skip straight to department narrowing.
+      queue.push({ product, options: product.categoryCandidates });
     }
 
     const apply = (
@@ -138,10 +131,44 @@ const validate = createStep({
     ) => {
       const { product, options } = entry;
       const before = product.category;
-      const picked = choice >= 0 && choice < options.length ? options[choice]! : null;
+      const chosen = choice >= 0 && choice < options.length ? options[choice]! : null;
+      // A department root would read as a correction and destroy retrieval, so
+      // it is treated as "no answer" and sent to the next, narrower question.
+      const picked = chosen !== null && isUsableCategory(chosen) ? chosen : null;
 
       if (picked === null && onRejected) {
         onRejected(entry);
+        return;
+      }
+
+      /**
+       * An answer that is an ANCESTOR of what we already had is not a
+       * correction, it is a loss. The escape hatch offers the 11 departments,
+       * which is the right question for a product with no category at all and
+       * the wrong one for a product the tagger already placed on a leaf.
+       *
+       * This cost a real run. A Nintendo Switch 2 console sat correctly on
+       * `gaming/spillekonsol-tilbehor/nintendo-switch`; the model rejected its
+       * own candidate list, the hatch offered departments, it answered
+       * `gaming`, and that overwrote the leaf. Every later step searched by
+       * category, so the recommender got 155 unrelated gaming products and
+       * refused — correctly, on input we had broken ourselves.
+       */
+      if (picked !== null && before !== null && before.startsWith(`${picked}/`)) {
+        product.validationNote = `kept ${before}; model offered the broader ${picked}`;
+        product.validatedAt = new Date().toISOString();
+        product.validatedBy = VALIDATOR_MODEL;
+        store.put(product);
+        outcomes.push({
+          sku: product.sku,
+          name: product.name,
+          before,
+          after: before,
+          status: 'validated',
+          confidence: 'low',
+          optionsOffered: options.length,
+          note: product.validationNote,
+        });
         return;
       }
 
@@ -175,35 +202,48 @@ const validate = createStep({
       });
     };
 
-    /**
-     * A product the tagger placed is only offered the tagger's own candidates.
-     * When all of them are wrong the model can only answer -1, so it gets a
-     * second, wider question instead of being left unresolved.
-     */
-    const needsEscapeHatch: Array<{ product: TaggedProduct; options: string[] }> = [];
-
     const runBatches = async (
-      entries: Array<{ product: TaggedProduct; options: string[] }>,
-      onRejected: ((entry: { product: TaggedProduct; options: string[] }) => void) | null,
+      entries: Entry[],
+      handlers: {
+        onRejected?: ((entry: Entry) => void) | null;
+        /** Takes the raw choice instead of applying it, for the narrowing pass. */
+        onAnswer?: ((entry: Entry, choice: number) => void) | null;
+        /** One option list for the whole batch, printed once instead of per item. */
+        shared?: boolean;
+      } = {},
     ) => {
     for (let start = 0; start < entries.length; start += inputData.batchSize) {
       const batch = entries.slice(start, start + inputData.batchSize);
-      const prompt = batch
-        .map((entry, i) => {
-          const opts = entry.options.map((o, j) => `   ${j} ${o}`).join('\n');
-          return `${i + 1}) ${entry.product.name}\n${opts}`;
-        })
-        .join('\n\n');
+      /**
+       * With a shared list the options are printed once. That is what makes
+       * narrowing inside a department affordable: `hjem-have` has 201
+       * categories, and repeating them per item would be 10x the prompt.
+       */
+      const prompt = handlers.shared
+        ? `Options:\n${(batch[0]?.options ?? []).map((o, j) => `   ${j} ${o}`).join('\n')}\n\n` +
+          `Products:\n${batch.map((entry, i) => `${i + 1}) ${entry.product.name}`).join('\n')}`
+        : batch
+            .map((entry, i) => {
+              const opts = entry.options.map((o, j) => `   ${j} ${o}`).join('\n');
+              return `${i + 1}) ${entry.product.name}\n${opts}`;
+            })
+            .join('\n\n');
 
       let answered = false;
       for (let attempt = 0; attempt <= MAX_RETRIES && !answered; attempt++) {
         try {
           await throttle.take();
           requests++;
+          const instruction = handlers.shared
+            ? 'Classify each product below. Every product uses the same numbered list of options.'
+            : 'Classify each product below. Answer once per item, using that item\'s own options.';
           const result = await categoryValidator.generate(
-            `Classify each product below. Answer once per item, using that item's own options.\n\n${prompt}`,
+            `${instruction}\n\n${prompt}`,
             { structuredOutput: { schema: batchAnswerSchema } },
           );
+          const used = await readUsage(result);
+          inputTokens += used?.inputTokens ?? 0;
+          outputTokens += used?.outputTokens ?? 0;
           const answers = result.object?.answers;
           if (!answers?.length) throw new Error('model returned no answers');
 
@@ -214,7 +254,8 @@ const validate = createStep({
             // Guard against index drift: a misaligned answer is dropped, not applied.
             if (!entry || seen.has(idx)) continue;
             seen.add(idx);
-            apply(entry, a.choice, a.confidence, onRejected);
+            if (handlers.onAnswer) handlers.onAnswer(entry, a.choice);
+            else apply(entry, a.choice, a.confidence, handlers.onRejected ?? null);
           }
           for (let i = 0; i < batch.length; i++) {
             if (seen.has(i)) continue;
@@ -228,9 +269,11 @@ const validate = createStep({
           }
           answered = true;
         } catch (error) {
-          const delay = retryDelayFrom(error);
-          if (delay !== null && attempt < MAX_RETRIES) {
-            await new Promise((r) => setTimeout(r, delay));
+          // Rate limits wait as instructed; provider 503s back off. Before
+          // this covered both, one 503 could end a whole validation pass.
+          const plan = retryPlanFor(error, attempt);
+          if (plan && attempt < MAX_RETRIES) {
+            await new Promise((r) => setTimeout(r, plan.delayMs));
             continue;
           }
           for (const entry of batch) {
@@ -247,15 +290,73 @@ const validate = createStep({
     }
     };
 
-    // Pass 1: the tagger's own candidates. Rejections are parked, not recorded.
-    await runBatches(queue, (entry) => needsEscapeHatch.push(entry));
+    const markUnresolved = (entry: Entry, note: string) => {
+      const { product, options } = entry;
+      product.status = 'unresolved';
+      product.validationNote = note;
+      product.validatedAt = new Date().toISOString();
+      product.validatedBy = VALIDATOR_MODEL;
+      store.put(product);
+      outcomes.push({
+        sku: product.sku, name: product.name, before: product.category,
+        after: product.category, status: 'unresolved', confidence: null,
+        optionsOffered: options.length, note,
+      });
+    };
 
-    // Pass 2: the parked ones get the 11 departments, the same closed set the
-    // never-tagged products get. One extra cheap call for a minority of cases.
-    if (needsEscapeHatch.length) {
+    /**
+     * Three questions, each narrower than the last.
+     *
+     * The middle one used to be the end of the line, and that was the bug. A
+     * product the tagger misfiled would be rejected in pass 1, answered with a
+     * department in pass 2, and that department got written as its category.
+     * Three real runs died on it: a cleaning robot became `hjem-have`, a drone
+     * `sport-fritid-hobby`, a wine cabinet `hvidevarer`. Every one of those
+     * pools is the drawer of products nothing could classify, so searching it
+     * is meaningless and the recommender refused — on input we had broken.
+     *
+     * Now a department is only ever a step on the way to a leaf.
+     */
+    const needsDepartment: Entry[] = [...queue.filter((e) => !e.options.length)];
+    const withCandidates = queue.filter((e) => e.options.length > 0);
+
+    // 1. the tagger's own candidates, for products it actually placed.
+    if (withCandidates.length) {
+      await runBatches(withCandidates, { onRejected: (entry) => needsDepartment.push(entry) });
+    }
+
+    // 2. which of the 11 departments. Not an answer, a narrowing.
+    const needsLeaf = new Map<string, Entry[]>();
+    if (needsDepartment.length) {
       await runBatches(
-        needsEscapeHatch.map((e) => ({ product: e.product, options: departments })),
-        null,
+        needsDepartment.map((e) => ({ product: e.product, options: departments })),
+        {
+          shared: true,
+          onAnswer: (entry, choice) => {
+            const dept = choice >= 0 && choice < departments.length ? departments[choice]! : null;
+            if (dept === null) {
+              markUnresolved(entry, 'model placed it in no department');
+              return;
+            }
+            const list = needsLeaf.get(dept) ?? [];
+            list.push(entry);
+            needsLeaf.set(dept, list);
+          },
+        },
+      );
+    }
+
+    // 3. which category inside that department. One shared option list per
+    //    department, so the cost is one prompt per department, not per product.
+    for (const [dept, entries] of needsLeaf) {
+      const paths = (categoriesByDepartment.get(dept) ?? []).filter(isUsableCategory);
+      if (!paths.length) {
+        for (const entry of entries) markUnresolved(entry, `no leaf categories under ${dept}`);
+        continue;
+      }
+      await runBatches(
+        entries.map((e) => ({ product: e.product, options: paths })),
+        { shared: true },
       );
     }
 
@@ -274,6 +375,7 @@ const validate = createStep({
       stillUnresolved: count('unresolved'),
       errors: count('error'),
       requests,
+      usage: { inputTokens, outputTokens },
       skippedNoApiKey: noKey,
       durationMs: Date.now() - startedAt,
       outcomes,

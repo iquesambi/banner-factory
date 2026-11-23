@@ -69,8 +69,61 @@ numerada de opções e devolve o índice da que escolheu. São dois tokens de
 resposta — e categoria inventada fica impossível, porque se o número não está na
 lista é erro detectável, não um texto que parece certo.
 
-Resultado: escolher o produto não vai custar token nenhum de modelo. É consulta
-numa base já anotada. O único gasto por banner é escrever o texto.
+Resultado: a anotação da base fica barata e o custo cresce com uso, não com o
+tamanho do catálogo.
+
+Uma coisa que eu afirmei aqui antes e que estava errada: eu tinha escrito que
+escolher o produto não custaria token nenhum, porque seria consulta numa base
+anotada. Deixou de valer quando decidimos que o modelo escolhe. Hoje escolher
+custa entre zero e duas chamadas, dependendo do caminho — e os números estão
+logo abaixo.
+
+### Depois, escolher o que recomendar
+
+Com categoria e marca na base, já dá para perguntar o que mostrar quando o
+produto que a pessoa olhou está esgotado. São nove passos, e a ordem importa
+mais do que qualquer um deles:
+
+1. Carrega o produto semente
+2. Confere a categoria dele com o modelo — eu vou buscar pela categoria, então
+   ela tem que estar certa
+3. **Tem estoque? Então ele é a própria resposta.** Custa zero
+4. Monta a lista do que está em estoque naquela categoria
+5. **O mesmo produto em outra cor, em estoque?** Comparação de texto, custa
+   zero, e nenhum modelo escolheria melhor
+6. Limpa a categoria, porque o passo seguinte herda erro de categoria
+7. Classifica o nível premium da semente e da lista, uma vez por categoria,
+   guardado na base
+8. Pede a recomendação entre os do mesmo nível
+9. Só se isso voltar vazio, abre para um nível acima e um abaixo
+
+Os passos 3 e 5 vêm antes de tudo que custa dinheiro, de propósito. E eles
+pegam mais do que eu esperava: o Galaxy Z Fold8 Ultra esgotado tem o mesmo
+aparelho, mesma memória, mesmo preço, em outra cor, com estoque.
+
+### O nível premium é diferente de categoria e marca
+
+Categoria tem gabarito: ou é uma secadora ou não é. Marca também, confiro
+contra a lista de 5.550. **Nível premium não tem.** Duas pessoas razoáveis
+discordam se uma Bosch de 12.000 kr é média ou alta.
+
+Então medi de outro jeito. O modelo nunca vê o preço — ele julga pelo nome,
+pela marca e pela linha. Depois eu comparo o nível que ele deu com o preço
+real que ele não viu:
+
+| categoria | produtos | correlação nível × preço |
+|---|---|---|
+| geladeira com freezer | 98 | 0,66 |
+| celular | 251 | 0,75 |
+
+Perto de zero seria ruído. Perto de 1 seria o nível só repetindo o preço, sem
+acrescentar nada. No meio é o que eu queria: concorda com o mercado e traz um
+eixo novo.
+
+Rodei a mesma lista em dois modelos diferentes: **86,7% de nível idêntico, e
+nunca mais de um nível de diferença.** Para um atributo sem gabarito, isso é o
+que importa — a régua não precisa estar certa no absoluto, precisa ser a mesma
+sempre, porque eu só uso ela para comparar semente com candidato.
 
 ## Onde está hoje
 
@@ -84,6 +137,23 @@ numa base já anotada. O único gasto por banner é escrever o texto.
 
 Os 40% que a camada grátis não resolve, o modelo preenche quando o produto
 aparece. Nos testes ele colocou 100% deles em algum lugar.
+
+E o custo de recomendar, medido em execuções reais:
+
+| caminho | chamadas | tokens | tempo |
+|---|---|---|---|
+| semente em estoque | **0** | 0 | 0,3s |
+| mesmo produto em outra cor | **1** | 314 | 5s |
+| categoria nova, primeira vez | 7 | 11.007 | 130s |
+| mesma categoria, depois | **1** | 940 | 7s |
+
+A última linha é o ponto do desenho. O nível premium fica gravado na base, e a
+segunda pergunta na mesma categoria custa um décimo da primeira.
+
+Cada execução também conta o próprio custo em tokens — vindos do contador do
+próprio Gemini, não estimados — e emite um evento por etapa, que vai para um
+webhook se você configurar um. É o que a interface vai consumir para mostrar
+em que passo o banner está.
 
 ## O que eu aprendi errando
 
@@ -116,6 +186,28 @@ e piorando sem saber. Hoje o teste roda com uma semente, então qualquer mediç�
 com 50 produtos de amostra, 77,6% quer dizer algo entre 65% e 86%, e falar só o
 77,6% seria vender mais confiança do que eu tenho.
 
+**O filtro de nível jogou fora a resposta certa.** Eu tinha feito o nível
+premium como portão: só candidato do mesmo nível chegava ao modelo. Numa
+geladeira Fisher & Paykel de 45.719 kr esgotada, o modelo recusou todos os
+candidatos, e estava certo — nenhum era French Door nem inox.
+
+Só que existia no catálogo um Samsung French Door inox de 37.998 kr, em
+estoque, 17% mais barato. Substituto quase perfeito. O filtro cortou ele
+porque o modelo tinha dado um nível abaixo. O modelo acertou, o portão errou.
+
+Hoje o nível vai **visível** para o modelo em vez de filtrar antes dele, e
+quando o mesmo nível não resolve a pergunta é refeita com um nível a mais de
+cada lado. Com isso o Samsung voltou a aparecer e foi escolhido em primeiro.
+
+**O tamanho do lote mudava a resposta.** Classificando 98 geladeiras em lotes
+de 25, o nível mais alto tinha 7 produtos. As mesmas 98 numa chamada só: 12. A
+culpa era de uma instrução minha, "use a escala toda" — dentro de uma fatia de
+25 isso força uma distribuição daquela fatia, não da categoria.
+
+Consertei mandando a categoria inteira numa chamada e dando a lista de todas as
+marcas da categoria como referência fixa. Ficou mais consistente e, de bônus,
+mais barato: as instruções vão uma vez em vez de quatro.
+
 **E uma correção de rumo:** eu tinha começado a decidir coisas que não são
 minhas — o que serve ou não para banner, o que conta como promoção. Tirei tudo.
 Hoje o tagger faz três coisas e só elas: categoria, marca e a conta do desconto.
@@ -133,22 +225,35 @@ O resto do feed ele carrega como está.
 | 6 | Lote de 10 produtos por chamada | o free tier do Gemini limita a 15 chamadas por minuto |
 | 7 | Tabela de sinônimos curada para 10 categorias | o feed escreve "smartphone" e a taxonomia diz "mobiltelefon"; comparar texto nunca cruza sinônimo |
 | 8 | Medir precisão com amostra e margem de erro | sem isso eu otimizo no escuro, e já aconteceu |
+| 9 | Nível premium nunca vê o preço | se vê, só repete o preço; sem ver, dá para conferir um contra o outro |
+| 10 | Nível vai visível ao modelo, não filtra antes dele | como portão ele cortou o melhor substituto do catálogo |
+| 11 | Passos de graça antes de qualquer passo pago | produto em estoque e mesma cor resolvem muito caso sem gastar nada |
+| 12 | Modelo responde índice e lista vazia é a recusa | número fora da lista é erro detectável; prosa dizendo "não" o workflow teria que interpretar |
+| 13 | Nível guardado na base com a categoria em que foi julgado | só é comparável ali; se a categoria muda, o nível vence |
+| 14 | Storage do Mastra para o histórico de execuções | o catálogo continua em NDJSON porque eu leio na mão; o que o motor fez, não |
+| 15 | Variante exata ignora o parêntese inteiro, material incluído | cadeira de tecido entra como variante da de couro; perguntei e a resposta foi deixar como está |
 
 ## O que ainda falta
 
 **Meu:**
 
-- A recomendação em si — dado o produto semente, escolher o que mostrar
 - A geração do banner, 2048 × 768, com o texto nos três idiomas
 - A interface e o fluxo sob demanda
 - Subir a precisão dos 77,6%; sei quais são os dois casos que faltam
 - Conferir as imagens dos produtos antes de desenhar o layout
+- A categoria de celular tem 18% de coisa que não é celular: capinha, película,
+  boneco de segurar o telefone. O nível premium herda esse erro — uma película
+  ZAGG de 299 kr volta como linha alta, porque entre películas ela é linha alta
+  mesmo. O recomendador é tão bom quanto o tagger embaixo dele
 
 **Suas, para a gente decidir:**
 
-- Regras de promoção: o que promover, e o que fazer quando não há nada bom
-- O que fazer quando o produto semente está sem estoque
-- Se o produto mostrado deve ser mais barato, parecido ou mais caro que o semente
+- Regras de promoção: o recomendador hoje nem vê desconto, de propósito. Ele
+  escolhe por mérito e o desconto entra depois, na sua regra
+- Qual das opções ranqueadas vai para o banner. O fluxo devolve uma lista com
+  justificativa em cada item; escolher dentro dela é regra de negócio
+- O desempate entre dois produtos idênticos em cores diferentes. Hoje o padrão
+  é estoque mais fundo primeiro, e isso é um palpite meu, não uma regra
 - Se os quatro perfis de cliente das referências de design entram na lógica
 - Urgência no texto: o guia de copy proíbe, mas um banner de produção diz
   "última chance"
@@ -160,4 +265,22 @@ npm install
 cp .env.example .env    # e põe a chave do Gemini
 npm run tag             # anota o catálogo inteiro, de graça
 npm run eval:sample -- --seed=7 --size=25
+```
+
+Recomendar, dado um produto semente:
+
+```bash
+npm run recommend -- 802582
+```
+
+Vários de uma vez, e cada um grava um .json completo em `.cache/runs/`:
+
+```bash
+npm run recommend -- 1116833 498120 802582
+```
+
+As execuções anteriores, lidas do storage do Mastra:
+
+```bash
+npm run runs
 ```
