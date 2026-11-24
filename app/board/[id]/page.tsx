@@ -8,6 +8,7 @@ import { LANGUAGE_LABEL, kr, stockLabel, type Job } from '@/app/lib/types';
 import { BannerThumb } from '@/app/components/banner-thumb';
 import { Thumbs } from '@/app/components/thumbs';
 import { PhotoBox } from '@/app/components/photo-box';
+import { TranslateButtons } from '@/app/components/make';
 import { describe } from '@/app/lib/describe';
 
 export default function CardPage({ params }: { params: Promise<{ id: string }> }) {
@@ -18,17 +19,48 @@ export default function CardPage({ params }: { params: Promise<{ id: string }> }
   /** Other requests that ended on this same banner, by reuse. */
   const [siblings, setSiblings] = useState<Job[]>([]);
 
+  /**
+   * Polling, and the difference between gone and unreachable.
+   *
+   * This used to call `setMissing(true)` on ANY failed fetch, and it polls
+   * every second, so a single hiccup — the dev server recompiling, a dropped
+   * request, a full disk — turned the page into "No job with that id." and
+   * left it there: the flag was never cleared, so every later poll succeeded
+   * behind a screen saying the job did not exist.
+   *
+   * Only a real 404 means gone. Anything else is this moment, not this job,
+   * and the next tick is allowed to disagree.
+   *
+   * And a 404 has to happen TWICE. In development the server serves one
+   * stale response from the previous build after a hot reload, and that
+   * response can be a 404 for a job that exists — measured, not guessed.
+   * A card that is genuinely gone is still gone a second later; a stale
+   * route is not.
+   */
   useEffect(() => {
     let live = true;
-    const tick = () =>
-      fetch(`/api/jobs/${id}`)
-        .then((r) => (r.ok ? r.json() : Promise.reject(new Error('404'))))
-        .then((data: { job: Job }) => {
-          if (live) setJob(data.job);
-        })
-        .catch(() => live && setMissing(true));
-    tick();
-    const timer = setInterval(tick, 1000);
+    let misses = 0;
+    const tick = async () => {
+      try {
+        const res = await fetch(`/api/jobs/${id}`);
+        if (!live) return;
+        if (res.status === 404) {
+          misses += 1;
+          if (misses >= 2) setMissing(true);
+          return;
+        }
+        misses = 0;
+        if (!res.ok) return;
+        const data = (await res.json()) as { job: Job };
+        if (!live) return;
+        setJob(data.job);
+        setMissing(false);
+      } catch {
+        /* Unreachable for a second. The card we already have still stands. */
+      }
+    };
+    void tick();
+    const timer = setInterval(() => void tick(), 1000);
     return () => {
       live = false;
       clearInterval(timer);
@@ -58,7 +90,13 @@ export default function CardPage({ params }: { params: Promise<{ id: string }> }
   if (missing) {
     return (
       <main className="mx-auto max-w-[1180px] px-8 py-10">
-        <p className="text-sm text-muted-foreground">No job with that id.</p>
+        <p className="text-sm text-muted-foreground">
+          There is no card with that id — it was probably thrown away.{' '}
+          <Link href="/board" className="font-medium text-foreground underline underline-offset-2">
+            Back to the board
+          </Link>
+          .
+        </p>
       </main>
     );
   }
@@ -90,6 +128,16 @@ export default function CardPage({ params }: { params: Promise<{ id: string }> }
             <div className="mb-3.5 flex flex-wrap items-center gap-2">
               <StageBadge job={job} />
               <Badge>{LANGUAGE_LABEL[job.language]}</Badge>
+              {/*
+                Said plainly, because it changes how the card should be read:
+                no agent chose this product, a person did, so there is no
+                recommendation here to agree or disagree with.
+              */}
+              {job.forced && (
+                <Badge tone="navy">
+                  {job.forced.how === 'seed' ? 'the seed itself, asked for' : 'a translation, asked for'}
+                </Badge>
+              )}
               <span className="text-[12.5px] text-muted-foreground">{when(job.createdAt)}</span>
             </div>
 
@@ -181,6 +229,15 @@ export default function CardPage({ params }: { params: Promise<{ id: string }> }
           {job.png && (
             <div className="px-6 pt-5">
               <BannerThumb job={job} className="overflow-hidden rounded-[11px] border" />
+              {/*
+                The same banner in another language, from the banner itself.
+                The product is kept: the language changes the words, never the
+                market or the price, so this is a translation and not a second
+                recommendation.
+              */}
+              <div className="mt-2.5">
+                <TranslateButtons job={job} />
+              </div>
             </div>
           )}
 
@@ -300,7 +357,7 @@ export default function CardPage({ params }: { params: Promise<{ id: string }> }
               )}
             </section>
 
-            <aside className="min-w-[270px] flex-[1_1_290px]">
+            <aside className="min-w-[340px] flex-[1_1_380px]">
               <div className="mb-3.5 overflow-hidden rounded-[10px] border">
                 <div className="border-b px-3.5 pb-2.5 pt-3">
                   <h2 className="mb-2 text-[13px] font-semibold">Cost</h2>
@@ -315,25 +372,85 @@ export default function CardPage({ params }: { params: Promise<{ id: string }> }
                   </div>
                   <div className="mt-0.5 text-[12.5px] text-muted-foreground">
                     {job.cost.tokens.toLocaleString('en-GB')} tokens &middot; {job.cost.calls} model calls
+                    {job.cost.ms !== undefined && <> &middot; {ms(job.cost.ms)}</>}
                   </div>
                 </div>
+                {/*
+                  Every stage, with everything it spent: the calls it made,
+                  the tokens they carried, the money and the time.
+
+                  Four columns rather than a sentence, because the comparison
+                  across the rows is the whole point — which stage is
+                  expensive and which is slow are not the same question, and
+                  on this pipeline they have different answers.
+                */}
                 {job.cost.byStep.length > 0 && (
                   <div className="border-b px-3.5 py-2.5">
-                    {job.cost.byStep.map((s) => (
-                      <div key={s.name} className="flex items-baseline justify-between gap-2.5 py-0.5">
-                        <span className="text-[12.5px] text-slate-600">{s.name}</span>
-                        <span className="tnum whitespace-nowrap text-[12.5px]">
-                          {s.usd !== null && <>{money(s.usd)} &middot; </>}
-                          <span className="text-muted-foreground">
-                            {s.tokens.toLocaleString('en-GB')} tk
-                          </span>
-                        </span>
-                      </div>
-                    ))}
-                    <div className="flex items-baseline justify-between gap-2.5 py-0.5 text-muted-foreground">
-                      <span className="text-[12.5px]">Generating the image</span>
-                      <span className="text-[12.5px]">—</span>
-                    </div>
+                    <table className="w-full border-collapse text-[12.5px]">
+                      <thead>
+                        <tr className="text-[10.5px] uppercase tracking-wide text-muted-foreground">
+                          <th className="pb-1 text-left font-medium">Stage</th>
+                          <th className="pb-1 pl-2 text-right font-medium">Calls</th>
+                          <th className="pb-1 pl-2 text-right font-medium">Tokens</th>
+                          <th className="pb-1 pl-2 text-right font-medium">Cost</th>
+                          <th className="pb-1 pl-2 text-right font-medium">Time</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {/*
+                          Keyed by position, not by name: a redo pays for the
+                          same stage again and the table shows both lines,
+                          because both were spent.
+                        */}
+                        {job.cost.byStep.map((s, i) => (
+                          <tr key={`${s.name}-${i}`} className="border-t border-secondary">
+                            <td className="py-1 pr-2 align-top text-slate-600">{s.name}</td>
+                            <td className="tnum py-1 pl-2 text-right align-top">{s.calls}</td>
+                            <td className="tnum py-1 pl-2 text-right align-top text-muted-foreground">
+                              {s.tokens.toLocaleString('en-GB')}
+                            </td>
+                            <td className="tnum whitespace-nowrap py-1 pl-2 text-right align-top">
+                              {s.usd === null ? '—' : money(s.usd)}
+                            </td>
+                            <td className="tnum whitespace-nowrap py-1 pl-2 text-right align-top text-muted-foreground">
+                              {s.ms === undefined ? '—' : ms(s.ms)}
+                            </td>
+                          </tr>
+                        ))}
+                        {/*
+                          The row that is not there yet. Image generation is
+                          specified and not wired, and leaving it off the
+                          table would make the total read as the cost of a
+                          finished banner.
+                        */}
+                        <tr className="border-t border-secondary text-muted-foreground">
+                          <td className="py-1 pr-2">Generating the image</td>
+                          <td className="py-1 pl-2 text-right">—</td>
+                          <td className="py-1 pl-2 text-right">—</td>
+                          <td className="py-1 pl-2 text-right">—</td>
+                          <td className="py-1 pl-2 text-right">—</td>
+                        </tr>
+                      </tbody>
+                      <tfoot>
+                        <tr className="border-t font-semibold">
+                          <td className="pt-1.5 pr-2">Total</td>
+                          <td className="tnum pt-1.5 pl-2 text-right">{job.cost.calls}</td>
+                          <td className="tnum pt-1.5 pl-2 text-right">
+                            {job.cost.tokens.toLocaleString('en-GB')}
+                          </td>
+                          <td className="tnum whitespace-nowrap pt-1.5 pl-2 text-right">
+                            {job.cost.usd === null ? '—' : money(job.cost.usd)}
+                          </td>
+                          <td className="tnum whitespace-nowrap pt-1.5 pl-2 text-right">
+                            {job.cost.ms === undefined ? '—' : ms(job.cost.ms)}
+                          </td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                    <p className="mt-2 text-[11.5px] leading-relaxed text-muted-foreground">
+                      Time is spent inside the workflows, not the wait in the queue: one banner is
+                      made at a time, and that wait says more about this machine than about the work.
+                    </p>
                   </div>
                 )}
                 {job.cost.rateReadAt && (
@@ -364,7 +481,7 @@ export default function CardPage({ params }: { params: Promise<{ id: string }> }
 function StageBadge({ job }: { job: Job }) {
   if (job.stage === 'failed') return <Badge tone="amber">Failed</Badge>;
   if (job.stage === 'ready') return <Badge tone="green">Ready</Badge>;
-  if (job.stage === 'review') return <Badge tone="amber">Waiting for review</Badge>;
+  if (job.stage === 'review') return <Badge tone="green">Ready</Badge>;
   return <Badge tone="navy">{job.stage}…</Badge>;
 }
 

@@ -1,0 +1,132 @@
+/*
+  The demo shop.
+
+  Plain CSS, no framework, no build. The colours and the type weight come
+  from the brand guide so the page sits around the banner without fighting
+  it; everything else is kept as plain as it can be, because this page is a
+  frame for the banner and not a project of its own.
+*/
+:root {
+  --navy: #0e2d7c;
+  --green: #77be24;
+  --green-dark: #4d7d14;
+  --ink: #0f172a;
+  --muted: #64748b;
+  --line: #e2e8f0;
+  --bg: #f8fafc;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+a { color: inherit; text-decoration: none; }
+
+header.bar {
+  background: var(--navy);
+  color: #fff;
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+header.bar img.logo { height: 22px; display: block; }
+/*
+  Said out loud, on every page. This page looks like a shop on purpose, and
+  anyone who lands on it should be able to tell in one glance that it is not
+  one. The brand material here was given for this challenge only.
+*/
+.demo-chip {
+  border: 1px solid rgba(255,255,255,.45);
+  border-radius: 999px;
+  padding: 2px 9px;
+  font-size: 11px;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+header.bar .spacer { flex: 1; }
+header.bar .links { display: flex; gap: 18px; font-size: 13.5px; opacity: .92; }
+
+main { max-width: 1120px; margin: 0 auto; padding: 22px 24px 60px; }
+
+.hero { margin-bottom: 30px; min-height: 80px; }
+
+h2.shelf-title { font-size: 17px; margin: 0 0 14px; }
+
+.shelf {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 14px;
+}
+
+.card {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: border-color .12s;
+}
+.card:hover { border-color: #94a3b8; }
+.card .shot { height: 130px; display: flex; align-items: center; justify-content: center; }
+.card .shot img { max-height: 130px; max-width: 100%; object-fit: contain; }
+.card .name { font-size: 13.5px; line-height: 1.35; min-height: 36px; }
+.card .price { font-size: 19px; font-weight: 700; letter-spacing: -.01em; }
+.card .was { font-size: 12px; color: var(--muted); text-decoration: line-through; }
+
+.save {
+  align-self: flex-start;
+  background: #ffe400;
+  color: #1a1a1a;
+  font-weight: 700;
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 3px;
+}
+
+.stock { font-size: 12px; color: var(--green-dark); }
+.stock.out { color: #b45309; }
+
+/* ------------------------------------------------------ product page */
+
+.product {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 24px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 32px;
+}
+.product .shot { flex: 1 1 320px; display: flex; align-items: center; justify-content: center; }
+.product .shot img { max-width: 100%; max-height: 360px; object-fit: contain; }
+.product .buy { flex: 1 1 320px; }
+.product h1 { font-size: 24px; line-height: 1.25; margin: 0 0 14px; letter-spacing: -.01em; }
+.product .price { font-size: 34px; font-weight: 800; letter-spacing: -.02em; }
+.product .row { display: flex; align-items: center; gap: 12px; margin: 6px 0 14px; }
+
+button.buy-btn {
+  background: var(--green);
+  color: #06270b;
+  border: 0;
+  border-radius: 999px;
+  padding: 12px 26px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+button.buy-btn:active { background: var(--green-dark); color: #fff; }
+
+.spec { border-top: 1px solid var(--line); margin-top: 18px; padding-top: 14px; font-size: 13.5px; }
+.spec div { display: flex; justify-content: space-between; padding: 4px 0; }
+.spec span:first-child { color: var(--muted); }
+
+.back { font-size: 13px; color: var(--muted); display: inline-block; margin-bottom: 14px; }
+.note { color: var(--muted); font-size: 12.5px; margin-top: 26px; line-height: 1.6; }

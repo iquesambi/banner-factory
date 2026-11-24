@@ -11,6 +11,7 @@
 import { Agent } from '@mastra/core/agent';
 import { google } from '@ai-sdk/google';
 import { z } from 'zod';
+import { activeInstructions } from '../../prompts/index.js';
 import { CTA_OPTIONS, LANGUAGE_NAMES, type BannerFacts } from '../../banner/facts.js';
 
 export const COPYWRITER_MODEL =
@@ -19,7 +20,7 @@ export const COPYWRITER_MODEL =
 /** Off by default, same reasoning as the other agents' fallbacks. */
 export const COPYWRITER_FALLBACK_MODEL = process.env.COPYWRITER_FALLBACK_MODEL ?? '';
 
-const COPYWRITER_INSTRUCTIONS = `You write banner copy for Elgiganten, a Nordic electronics and appliance
+export const COPYWRITER_INSTRUCTIONS = `You write banner copy for Elgiganten, a Nordic electronics and appliance
 retailer. One hero banner, one product, three lines of text.
 
 WHO IS SPEAKING
@@ -49,6 +50,15 @@ banner's language. Copy one of them exactly, including its capitalisation and
 its accents. Do not write your own, and never leave it in another language than
 the one you are writing in.
 
+Choose between them; do not take the first or the most obvious one every time.
+The button finishes the sentence the banner started, so it depends on what the
+banner is doing. A banner built on a price or a saving sends the customer to
+the offer. A banner built on the product itself, where the reader already
+knows what they want, sends them to buy. A banner that raises a question or
+introduces something unfamiliar sends them to read more, because asking
+someone to buy what they do not yet understand is pushy. If two fit, take the
+quieter one: this brand advises, it does not sell hard.
+
 accent — one continuous run of words copied EXACTLY from your own headline. In
 every real banner one phrase of the headline is set in green while the rest is
 white, and this is that phrase. Pick the words carrying the idea. It must
@@ -63,6 +73,18 @@ must never be invented, and a number that is not in the facts must not appear
 in your text. If the facts carry a restriction, your copy must not contradict
 it: do not write as though a limited product were unlimited, and do not present
 a member price as though everyone paid it.
+
+A SAVING IS NOT YOUR LINE
+
+When the facts carry a saving, the banner prints it beside the price, in the
+yellow bar the brand uses for exactly this, in bigger type than your headline.
+So do not spend the headline repeating the figure: it is already the loudest
+thing on the banner, and a headline that says it again buys nothing and leaves
+the product unsold. Write the line that makes someone want the product, and
+let the bar do the arithmetic. The same goes for the plain price.
+
+You may write around the offer — that it is worth looking at now — as long as
+you do not quote a number the bar is already printing.
 
 Benefits over specifications. Say what the product does for the person. Raw
 measurements, model codes and features every competitor also has are not
@@ -106,7 +128,15 @@ export type CopyDraft = z.infer<typeof copywriterSchema>;
 export const copywriter = new Agent({
   id: 'copywriter',
   name: 'copywriter',
-  instructions: COPYWRITER_INSTRUCTIONS,
+  /**
+   * Read at call time, not at import time.
+   *
+   * The baseline above is the version under source control. A revision
+   * promoted on the improvement screen replaces it from `.cache/prompts.json`
+   * for the next banner, with no restart and no deploy; with nothing
+   * promoted, this is the baseline and nothing has changed.
+   */
+  instructions: () => activeInstructions('copywriter', COPYWRITER_INSTRUCTIONS),
   model: google(COPYWRITER_MODEL),
 });
 
@@ -114,7 +144,15 @@ export const copywriterFallback = COPYWRITER_FALLBACK_MODEL
   ? new Agent({
       id: 'copywriter-fallback',
       name: 'copywriter-fallback',
-      instructions: COPYWRITER_INSTRUCTIONS,
+      /**
+   * Read at call time, not at import time.
+   *
+   * The baseline above is the version under source control. A revision
+   * promoted on the improvement screen replaces it from `.cache/prompts.json`
+   * for the next banner, with no restart and no deploy; with nothing
+   * promoted, this is the baseline and nothing has changed.
+   */
+  instructions: () => activeInstructions('copywriter', COPYWRITER_INSTRUCTIONS),
       model: google(COPYWRITER_FALLBACK_MODEL),
     })
   : null;
@@ -149,7 +187,14 @@ export function copyPrompt(facts: BannerFacts): string {
   }
 
   lines.push('');
-  lines.push(`Button options (copy one exactly): ${CTA_OPTIONS[facts.language].join(' | ')}`);
+  /**
+   * One per line, and asked for as a choice. On a single line the model took
+   * the same entry every time and the button never changed across banners;
+   * the order of a list is a suggestion a model will follow when nothing
+   * tells it to decide.
+   */
+  lines.push('Button options — copy one exactly, and pick the one that fits this banner:');
+  for (const option of CTA_OPTIONS[facts.language]) lines.push(`- ${option}`);
   lines.push('');
   lines.push(
     'Write the banner. Every number you use must come from the facts above or from the product name.',

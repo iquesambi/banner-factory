@@ -169,6 +169,13 @@ export function bannerHtml(
     Math.round(height * PRODUCT_BOX.maxFraction),
     height - PRODUCT_BOX.marginTop - PRODUCT_BOX.marginBottom,
   );
+  /**
+   * Type grows with the layout. A wider text band with the same 132px
+   * headline reads as a smaller banner, not a roomier one.
+   */
+  const ts = brief.design.typeScale ?? 1;
+  const S = (n: number) => Math.round(n * ts);
+
   const productH = Math.round(roomH * SCALE[direction.productScale]);
   const productW = Math.round(z.product.width * SCALE[direction.productScale]);
 
@@ -194,16 +201,16 @@ export function bannerHtml(
   /* Measured: the headline caps run about 120px tall in the references, so
      the starting size is well above that and the fit script brings it down. */
   .hl { font-family:"ElkHead", system-ui, sans-serif; text-transform:uppercase;
-        font-size:132px; line-height:0.94; letter-spacing:-1px; white-space:nowrap; }
+        font-size:${S(132)}px; line-height:0.94; letter-spacing:-1px; white-space:nowrap; }
   .accent { color:${p.green}; }
-  .support { margin-top:30px; font-size:31px; line-height:1.3; max-width:${z.text.width - 20}px; }
+  .support { margin-top:${S(30)}px; font-size:${S(31)}px; line-height:1.3; max-width:${z.text.width - 20}px; }
 
   /* The depth is a hard offset shadow, not a second element: an absolutely
      positioned pill gets its width capped by the container and ends up
      narrower and lower than the face, which is exactly how it first went
      wrong. A shadow follows the border radius for free. */
   .cta { margin-top:48px; align-self:flex-start; background:${p.green}; color:${p.navyDark};
-         font-weight:600; font-size:32px; padding:20px 44px; border-radius:999px;
+         font-weight:600; font-size:${S(32)}px; padding:${S(20)}px ${S(44)}px; border-radius:999px;
          box-shadow:${CTA_DEPTH}px ${CTA_DEPTH}px 0 ${p.greenDeep}; }
 
   .product { position:absolute; left:${z.product.x}px; top:0;
@@ -231,20 +238,20 @@ export function bannerHtml(
      and only noticed when an image model drew it correctly from the same
      brief and disagreed with my own prompt. */
   .energy .arrow { position:relative; background:var(--c); color:#fff; font-weight:600;
-                   font-size:62px; line-height:112px; padding:0 22px 0 10px; margin-left:56px; }
+                   font-size:${S(62)}px; line-height:112px; padding:0 22px 0 10px; margin-left:56px; }
   .energy .arrow::before { content:""; position:absolute; left:-56px; top:0; width:0; height:0;
                            border-top:56px solid transparent; border-bottom:56px solid transparent;
                            border-right:56px solid var(--c); }
   .energy .scale { display:flex; flex-direction:column; align-items:center; justify-content:center;
-                   background:#fff; color:#111; font-size:26px; font-weight:600; line-height:1.1;
+                   background:#fff; color:#111; font-size:${S(26)}px; font-weight:600; line-height:1.1;
                    padding:0 10px; border-radius:2px; margin-left:4px; }
   .bar { background:${p.yellow}; color:${p.navyDark}; font-family:"ElkHead", system-ui, sans-serif;
-         font-size:44px; line-height:1; padding:13px 22px; text-transform:uppercase; }
-  .circle { background:${p.pink}; color:${p.white}; font-weight:600; font-size:30px; text-align:center;
+         font-size:${S(44)}px; line-height:1; padding:${S(13)}px ${S(22)}px; text-transform:uppercase; }
+  .circle { background:${p.pink}; color:${p.white}; font-weight:600; font-size:${S(30)}px; text-align:center;
             width:196px; height:196px; border-radius:50%; display:flex; align-items:center; justify-content:center; padding:20px; }
-  .price { font-family:"ElkHead", system-ui, sans-serif; font-size:124px; line-height:0.92; }
-  .was { font-size:26px; opacity:0.88; margin-top:6px; }
-  .pname { font-size:23px; font-weight:600; line-height:1.3; max-width:${z.side.width - 10}px; }
+  .price { font-family:"ElkHead", system-ui, sans-serif; font-size:${S(124)}px; line-height:0.92; }
+  .was { font-size:${S(26)}px; opacity:0.88; margin-top:6px; }
+  .pname { font-size:${S(23)}px; font-weight:600; line-height:1.3; max-width:${z.side.width - 10}px; }
 
   .fine { position:absolute; left:0; bottom:22px; width:100%; text-align:center;
           font-size:17px; opacity:0.8; }

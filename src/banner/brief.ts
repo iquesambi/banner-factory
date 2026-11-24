@@ -91,6 +91,81 @@ export const ZONES = {
   side: { x: 1516, y: MARGIN, width: 454, height: CANVAS.height - MARGIN * 2 },
 } as const;
 
+/** A band: where it starts and how much room it has. */
+export interface Band { x: number; y: number; width: number; height: number }
+export interface Zones { text: Band; product: Band; side: Band }
+
+/**
+ * More than one way to place the three bands.
+ *
+ * The measurements above are one arrangement, and every banner this project
+ * made used it, which is why they all looked like each other. The production
+ * references are not that uniform: the product moves side to side and the
+ * price band goes with it.
+ *
+ * So the bands keep their measured proportions and change places. Nothing
+ * here invents a new geometry — the margin, the widths and the side band are
+ * the ones taken off the real banners, mirrored or stretched, not redrawn.
+ */
+export type LayoutName = 'classic' | 'mirrored' | 'wide';
+
+const GUTTER = CANVAS.width - MARGIN; // 1970: where the right edge of content sits
+
+export const LAYOUTS: Record<LayoutName, { zones: Zones; typeScale: number; note: string }> = {
+  /** As measured: text left, product centre-right, price band far right. */
+  classic: {
+    zones: ZONES,
+    typeScale: 1,
+    note: 'text on the left, product centre-right, price band on the far right',
+  },
+
+  /**
+   * The same bands, mirrored. The product moves to the left of centre and the
+   * copy reads down the right, which is the arrangement several of the
+   * production banners use and none of ours did.
+   */
+  mirrored: {
+    zones: {
+      text: { x: GUTTER - 612, y: MARGIN, width: 612, height: CANVAS.height - MARGIN * 2 },
+      product: { x: 533, y: 0, width: 737, height: CANVAS.height },
+      side: { x: MARGIN, y: MARGIN, width: 454, height: CANVAS.height - MARGIN * 2 },
+    },
+    typeScale: 1,
+    note: 'price band on the left, product centre-left, text on the right',
+  },
+
+  /**
+   * Fewer, larger elements. The text band takes the room the side band would
+   * have used and the type comes up with it, for a banner that carries one
+   * message loudly rather than three quietly.
+   */
+  wide: {
+    zones: {
+      text: { x: MARGIN, y: MARGIN, width: 760, height: CANVAS.height - MARGIN * 2 },
+      product: { x: 900, y: 0, width: 800, height: CANVAS.height },
+      side: { x: 1700, y: MARGIN, width: 270, height: CANVAS.height - MARGIN * 2 },
+    },
+    typeScale: 1.12,
+    note: 'a wider text band and a larger product, with a narrow price column',
+  },
+};
+
+/**
+ * Which arrangement a product gets.
+ *
+ * Derived from the SKU rather than chosen at random or by a model. Random
+ * would mean the same product rendered differently every run, which makes a
+ * banner impossible to reproduce and a reused one look like a mistake; a
+ * model would cost a call to answer a question with no judgement in it. A
+ * hash gives variety across products and stability for each one.
+ */
+export function layoutFor(sku: string): LayoutName {
+  let hash = 0;
+  for (let i = 0; i < sku.length; i++) hash = (hash * 31 + sku.charCodeAt(i)) >>> 0;
+  const names = Object.keys(LAYOUTS) as LayoutName[];
+  return names[hash % names.length]!;
+}
+
 /**
  * How much vertical room the product gets, and the floor under it.
  *
@@ -165,7 +240,11 @@ export interface ArtDirectorBrief {
     palette: typeof PALETTE;
     fonts: typeof FONTS;
     logo: typeof LOGO;
-    zones: typeof ZONES;
+    zones: Zones;
+    /** Which arrangement of the three bands this banner uses. */
+    layout: LayoutName;
+    /** Multiplier on every type size, so a layout can carry larger copy. */
+    typeScale: number;
     background: string;
     notes: string[];
   };
@@ -188,10 +267,19 @@ export interface BriefInput {
   copy: CopyDraft;
   show: ChosenBadge[];
   finePrint: string | null;
+  /** Forces an arrangement, for comparing them side by side. */
+  layout?: LayoutName;
 }
 
 export function buildBrief(input: BriefInput): ArtDirectorBrief {
   const { facts, copy } = input;
+  /**
+   * The arrangement is settled before anything is drawn, from the product
+   * itself, so the brief the art director reads already says where the bands
+   * are rather than assuming the one we always used.
+   */
+  const layoutName = input.layout ?? layoutFor(facts.sku);
+  const layout = LAYOUTS[layoutName];
   const inStock = !['0', '', undefined].includes(input.seed.stockBand.trim());
 
   return {
@@ -235,7 +323,9 @@ export function buildBrief(input: BriefInput): ArtDirectorBrief {
       palette: PALETTE,
       fonts: FONTS,
       logo: LOGO,
-      zones: ZONES,
+      zones: layout.zones,
+      layout: layoutName,
+      typeScale: layout.typeScale,
       background: `navy gradient, ${PALETTE.navyLight} to ${PALETTE.navyDark}`,
       notes: [
         'The headline is set in the headline face, upper case, white, with the accent run in the brand green.',
@@ -243,6 +333,7 @@ export function buildBrief(input: BriefInput): ArtDirectorBrief {
         'The call to action is a filled green pill with dark text, bottom of the text band.',
         'The product is cut out and sits on the navy, with no card and no drop shadow behind it.',
         'The logo goes on the navy in its white form.',
+        `This banner uses the ${layoutName} arrangement: ${layout.note}.`,
         'The fine print runs along the very bottom in the body face, small, white.',
       ],
     },

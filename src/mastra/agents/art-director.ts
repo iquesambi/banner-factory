@@ -18,6 +18,7 @@
 import { Agent } from '@mastra/core/agent';
 import { google } from '@ai-sdk/google';
 import { z } from 'zod';
+import { activeInstructions } from '../../prompts/index.js';
 import type { ArtDirectorBrief } from '../../banner/brief.js';
 
 export const ART_DIRECTOR_MODEL =
@@ -25,7 +26,7 @@ export const ART_DIRECTOR_MODEL =
 
 export const ART_DIRECTOR_FALLBACK_MODEL = process.env.ART_DIRECTOR_FALLBACK_MODEL ?? '';
 
-const ART_DIRECTOR_INSTRUCTIONS = `You are the art director for an Elgiganten hero banner, 2048 by 768. The
+export const ART_DIRECTOR_INSTRUCTIONS = `You are the art director for an Elgiganten hero banner, 2048 by 768. The
 product is chosen, the copy is written and the badges are decided. The grid,
 the colours and the type are fixed brand assets and are not yours to change.
 Two things are yours.
@@ -86,7 +87,15 @@ export type ArtDirection = z.infer<typeof artDirectionSchema>;
 export const artDirector = new Agent({
   id: 'art-director',
   name: 'art-director',
-  instructions: ART_DIRECTOR_INSTRUCTIONS,
+  /**
+   * Read at call time, not at import time.
+   *
+   * The baseline above is the version under source control. A revision
+   * promoted on the improvement screen replaces it from `.cache/prompts.json`
+   * for the next banner, with no restart and no deploy; with nothing
+   * promoted, this is the baseline and nothing has changed.
+   */
+  instructions: () => activeInstructions('art-director', ART_DIRECTOR_INSTRUCTIONS),
   model: google(ART_DIRECTOR_MODEL),
 });
 
@@ -94,7 +103,15 @@ export const artDirectorFallback = ART_DIRECTOR_FALLBACK_MODEL
   ? new Agent({
       id: 'art-director-fallback',
       name: 'art-director-fallback',
-      instructions: ART_DIRECTOR_INSTRUCTIONS,
+      /**
+   * Read at call time, not at import time.
+   *
+   * The baseline above is the version under source control. A revision
+   * promoted on the improvement screen replaces it from `.cache/prompts.json`
+   * for the next banner, with no restart and no deploy; with nothing
+   * promoted, this is the baseline and nothing has changed.
+   */
+  instructions: () => activeInstructions('art-director', ART_DIRECTOR_INSTRUCTIONS),
       model: google(ART_DIRECTOR_FALLBACK_MODEL),
     })
   : null;

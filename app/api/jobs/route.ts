@@ -25,7 +25,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'expected a JSON body' }, { status: 400 });
   }
 
-  const parsed = body as { items?: Array<{ sku?: unknown; language?: unknown }>; reuse?: unknown };
+  const parsed = body as {
+    items?: Array<{
+      sku?: unknown; language?: unknown;
+      /** A product named up front, which skips the matcher. */
+      pick?: unknown; how?: unknown; fromJobId?: unknown;
+    }>;
+    reuse?: unknown;
+  };
   const items = parsed.items;
   /** Reuse is the default; the person has to ask for a fresh banner. */
   const optOut = parsed.reuse === false;
@@ -38,8 +45,28 @@ export async function POST(request: Request) {
     const sku = typeof item.sku === 'string' ? item.sku : '';
     const language = LANGUAGES.includes(item.language as Language) ? (item.language as Language) : 'da';
     if (!sku) continue;
+    /**
+     * Two buttons name the product themselves: the banner for the seed, and
+     * the same banner in another language. Anything else leaves the choice
+     * to the matcher, which is the normal path.
+     */
+    const pick = typeof item.pick === 'string' && item.pick ? item.pick : null;
+    const how = item.how === 'translation' ? 'translation' : 'seed';
     try {
-      created.push(enqueue(sku, language, optOut));
+      created.push(
+        enqueue(sku, language, {
+          reuseOptOut: optOut,
+          ...(pick
+            ? {
+                forPick: {
+                  sku: pick,
+                  how,
+                  fromJobId: typeof item.fromJobId === 'string' ? item.fromJobId : null,
+                },
+              }
+            : {}),
+        }),
+      );
     } catch (error) {
       return NextResponse.json(
         { error: error instanceof Error ? error.message : String(error) },

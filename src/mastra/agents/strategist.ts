@@ -14,6 +14,7 @@
 import { Agent } from '@mastra/core/agent';
 import { google } from '@ai-sdk/google';
 import { z } from 'zod';
+import { activeInstructions } from '../../prompts/index.js';
 import { BADGE_LABELS, LANGUAGE_NAMES, type BannerFacts } from '../../banner/facts.js';
 import type { CopyDraft } from './copywriter.js';
 
@@ -22,7 +23,7 @@ export const STRATEGIST_MODEL =
 
 export const STRATEGIST_FALLBACK_MODEL = process.env.STRATEGIST_FALLBACK_MODEL ?? '';
 
-const STRATEGIST_INSTRUCTIONS = `You are the strategy director for an Elgiganten hero banner. The product is
+export const STRATEGIST_INSTRUCTIONS = `You are the strategy director for an Elgiganten hero banner. The product is
 chosen, the copy is written, and the facts that may be shown have already been
 checked for truth. Your job is to decide which of those facts earn a place on
 the banner, and in what order.
@@ -33,9 +34,21 @@ allowed" — it is "does this make the banner work harder".
 WHAT MAKES A BADGE EARN ITS PLACE
 
 It adds something the copy does not already say. The headline and the
-supporting line are in front of you. If the copy already carries the saving,
-the badge repeating it buys nothing and costs the one slot that could have
-carried a second idea.
+supporting line are in front of you. A badge that only restates the sentence
+beside it buys nothing and costs the one slot that could have carried a
+second idea.
+
+This test does NOT apply to the saving, and that is the one exception. The
+saving has a place of its own on this banner — the yellow bar beside the
+price, which is how this brand prints a discount in every reference we have —
+and that place is not writing. A headline that mentions the saving is the
+copywriter spending a line on something the bar prints anyway; the answer to
+that is worse copy, not a missing bar. If the facts offer a saving, carry it.
+Judge where it ranks, not whether it appears.
+
+The previous price belongs with it and only with it. An old price shown
+without the saving beside it is a number with nothing to explain it, so the
+two travel together or neither is shown.
 
 It matters for THIS product. Energy running costs weigh on a fridge or a
 washing machine over ten years, and weigh very little on a pair of headphones.
@@ -91,7 +104,15 @@ export type StrategyAnswer = z.infer<typeof strategySchema>;
 export const strategist = new Agent({
   id: 'strategist',
   name: 'strategist',
-  instructions: STRATEGIST_INSTRUCTIONS,
+  /**
+   * Read at call time, not at import time.
+   *
+   * The baseline above is the version under source control. A revision
+   * promoted on the improvement screen replaces it from `.cache/prompts.json`
+   * for the next banner, with no restart and no deploy; with nothing
+   * promoted, this is the baseline and nothing has changed.
+   */
+  instructions: () => activeInstructions('strategist', STRATEGIST_INSTRUCTIONS),
   model: google(STRATEGIST_MODEL),
 });
 
@@ -99,7 +120,15 @@ export const strategistFallback = STRATEGIST_FALLBACK_MODEL
   ? new Agent({
       id: 'strategist-fallback',
       name: 'strategist-fallback',
-      instructions: STRATEGIST_INSTRUCTIONS,
+      /**
+   * Read at call time, not at import time.
+   *
+   * The baseline above is the version under source control. A revision
+   * promoted on the improvement screen replaces it from `.cache/prompts.json`
+   * for the next banner, with no restart and no deploy; with nothing
+   * promoted, this is the baseline and nothing has changed.
+   */
+  instructions: () => activeInstructions('strategist', STRATEGIST_INSTRUCTIONS),
       model: google(STRATEGIST_FALLBACK_MODEL),
     })
   : null;

@@ -1,0 +1,173 @@
+rules_version = '2';
+
+// ===============================================================
+// Assumed Data Model
+// ===============================================================
+//
+// Collection: products
+// Document ID: the product SKU, which is the join key to the retailer's feed
+// Written ONLY by the server through the Admin SDK, which bypasses these
+// rules entirely — so every client write below is denied on purpose.
+// Fields (all optional on the document, all set by src/store/firestore-products.ts):
+//   - name: string - the product name, for human inspection only
+//   - category: string|null - a path in the retailer's taxonomy
+//   - categoryMethod: string|null - which rule matched
+//   - categoryDecidedBy: string|null - rule | confirmed | corrected | asked
+//   - categoryPerfect: bool|null - whole-word match with no tie
+//   - categoryAnswer: string|null - what a model called the product
+//   - brand: string|null
+//   - tier: number|null - premium tier 0..3
+//   - tierConfidence: string|null, tierCategory: string|null
+//   - status: string - auto | validated | corrected | unresolved | raw
+//   - validatedAt / validatedBy / validationNote: string|null
+//   - taxonomyVersion, feedVersion, publishedAt: string
+//
+// Collection: profiles
+// Document ID: the Firebase Auth uid.
+// Says what a person is allowed to JUDGE — admin, marketing, copywriter,
+// strategist or art-director — and nothing else about them. Written ONLY by
+// the server through the Admin SDK, after it has verified the caller's ID
+// token and checked that the caller is an admin or marketing. A role a
+// person can set on themselves is not a role, so every client write below is
+// denied on purpose.
+// Fields:
+//   - uid, email, name: who this is
+//   - role: string|null - one of the five, or null for somebody with none
+//   - assignedBy / assignedAt: who granted it and when
+//   - createdAt: first sign-in
+//
+// Collection: reviews
+// Document ID: {uid}_{jobId}_{stage} — one verdict per person, per banner,
+// per stage, so changing your mind replaces rather than piles up.
+// Fields:
+//   - uid: string (required, immutable) - the author; must equal the caller
+//   - jobId: string (required, 1-64 chars) - the banner run reviewed
+//   - stage: string (required) - 'choice', 'copy' or 'layout': WHICH agent's
+//     work this judges. A verdict that does not name a stage cannot improve
+//     any agent's instructions, which is the whole purpose of this table.
+//   - bannerPath: string (optional, <=512 chars) - its Cloud Storage path
+//   - rating: string (required) - exactly 'up' or 'down'
+//   - createdAt: string (required) - ISO 8601
+//
+// Nothing is readable without authentication, and any collection not named
+// here is denied outright.
+//
+// ===============================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // =========================================================
+    // Helper functions
+    // =========================================================
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isAuthenticated() && request.auth.uid == uid;
+    }
+
+    // The author may not be changed once the review exists: a verdict is only
+    // worth anything attached to the person who gave it.
+    function uidUnchanged() {
+      return request.resource.data.uid == resource.data.uid;
+    }
+
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    // No field beyond the documented model may be written. Without this an
+    // authenticated user can attach arbitrary data to their own documents.
+    function noExtraFields(allowed) {
+      return request.resource.data.keys().hasOnly(allowed);
+    }
+
+    function isValidString(field, minLen, maxLen) {
+      return request.resource.data[field] is string
+        && request.resource.data[field].size() >= minLen
+        && request.resource.data[field].size() <= maxLen;
+    }
+
+    function isValidOptionalString(field, maxLen) {
+      return !(field in request.resource.data)
+        || (request.resource.data[field] is string
+            && request.resource.data[field].size() <= maxLen);
+    }
+
+    function isValidDateString(field) {
+      return request.resource.data[field] is string
+        && request.resource.data[field].matches('^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}.*');
+    }
+
+    // =========================================================
+    // products — the marketing database
+    // =========================================================
+    //
+    // Read by anyone signed in: these are category, brand and premium tier,
+    // the shop's own classification of its catalogue, and every screen in the
+    // app needs them.
+    //
+    // Written by nobody from a client. The documents are produced by a tagging
+    // run that reconciles 28,231 products against a taxonomy; a client write
+    // could only ever corrupt that, and the server does not go through here.
+    match /products/{sku} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if false;
+    }
+
+    // =========================================================
+    // profiles — what a person is allowed to judge
+    // =========================================================
+    //
+    // You may read your own. You may not write any, including your own:
+    // the whole value of a role is that its holder did not choose it.
+    match /profiles/{uid} {
+      allow read: if isOwner(uid);
+      allow create, update, delete: if false;
+    }
+
+    // =========================================================
+    // reviews — a person's verdict on one generated banner
+    // =========================================================
+
+    function isValidReview() {
+      return hasRequiredFields(['uid', 'jobId', 'stage', 'rating', 'createdAt'])
+        && noExtraFields(['uid', 'jobId', 'stage', 'bannerPath', 'rating', 'createdAt'])
+        && request.resource.data.uid is string
+        && isValidString('jobId', 1, 64)
+        && request.resource.data.stage in ['choice', 'copy', 'layout']
+        && request.resource.data.rating in ['up', 'down']
+        && isValidOptionalString('bannerPath', 512)
+        && isValidDateString('createdAt');
+    }
+
+    match /reviews/{reviewId} {
+      // Own reviews only, which is also what makes the queries the app runs
+      // legal: it always filters by uid, so the rule can be checked against
+      // the query without reading every document.
+      allow read: if isOwner(resource.data.uid);
+
+      allow create: if isOwner(request.resource.data.uid)
+        && isValidReview();
+
+      allow update: if isOwner(resource.data.uid)
+        && uidUnchanged()
+        && isValidReview();
+
+      allow delete: if isOwner(resource.data.uid);
+    }
+
+    // =========================================================
+    // Everything else
+    // =========================================================
+    //
+    // Default deny, last and explicit. A collection added later gets no
+    // access until someone writes a rule for it on purpose.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

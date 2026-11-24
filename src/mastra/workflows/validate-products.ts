@@ -5,6 +5,7 @@ import { TagStore } from '../../store/index.js';
 import type { TaggedProduct } from '../../types.js';
 import { categoryValidator, hasApiKey, VALIDATOR_MODEL } from '../agents/category-validator.js';
 import { categoryConfirmer, confirmPrompt, confirmSchema } from '../agents/category-enricher.js';
+import { publishProducts } from '../../store/firestore-products.js';
 import { RPM_LIMIT, RpmThrottle, retryPlanFor } from '../rpm.js';
 import { readUsage } from '../../cost/index.js';
 
@@ -74,6 +75,9 @@ const validate = createStep({
       outputTokens: z.number(),
     }),
     skippedNoApiKey: z.boolean(),
+    /** Documents mirrored to Firestore for the products this run settled. */
+    published: z.number(),
+    publishSkipped: z.string().nullable(),
     durationMs: z.number(),
     outcomes: z.array(outcomeSchema),
   }),
@@ -419,11 +423,34 @@ const validate = createStep({
       );
     }
 
+    /**
+     * The handful this run just settled goes to Firestore, and nothing else.
+     *
+     * This is the whole shape of the mirror: a category is published when a
+     * run actually decides it, so the copy fills in where the shop is being
+     * used. Reported on the result, never thrown — the verdict is already in
+     * the local store, which is what everything here reads.
+     */
+    const decided = outcomes
+      .filter((o) => o.status === 'validated' || o.status === 'corrected' || o.status === 'filled')
+      .map((o) => o.sku);
+    let published = 0;
+    let publishSkipped: string | null = null;
+    if (decided.length) {
+      const out = await publishProducts(store, { only: decided });
+      published = out.written;
+      publishSkipped = out.unavailable;
+    }
+
+    // Saved last, so the publication stamps the mirror just set are written
+    // with everything else rather than being lost on the next load.
     const meta = store.metadata;
     if (meta) store.save(meta);
 
     const count = (s: ValidationOutcome['status']) => outcomes.filter((o) => o.status === s).length;
     return {
+      published,
+      publishSkipped,
       model: VALIDATOR_MODEL,
       requested: inputData.skus.length,
       checked: outcomes.length,

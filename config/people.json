@@ -1,0 +1,22 @@
+{
+  "note": [
+    "Who holds which role, by email, kept in the repository on purpose.",
+    "",
+    "Roles are normally handed out on the /profile screen and stored in Firestore, where",
+    "only the server can write them. This file is the other half: the people who have a",
+    "role before anybody has signed in. Without it the first admin could never exist,",
+    "because it takes an admin to make one.",
+    "",
+    "An email here outranks whatever the stored profile says, which is the property you",
+    "want from a bootstrap: it is the way back in when a role is removed by mistake.",
+    "",
+    "These are demo accounts. Email and password sign-up does not prove that an address",
+    "belongs to you, so anybody who reads this file can register as adm@email.com and be",
+    "an admin. That is fine for a demo and is not fine for a real shop: there you put",
+    "real addresses here and sign in through a provider that verifies them."
+  ],
+  "people": [
+    { "email": "adm@email.com", "role": "admin", "who": "the demo administrator" },
+    { "email": "da@email.com", "role": "art-director", "who": "the demo art director" }
+  ]
+}

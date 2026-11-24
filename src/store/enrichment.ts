@@ -54,6 +54,17 @@ export interface Enrichment {
 
   taxonomyVersion: string;
   feedVersion: string;
+
+  /**
+   * When this exact content was mirrored to Firestore, or null if it has not
+   * been — including when it was published and has since CHANGED.
+   *
+   * `put` clears it on any real change, so the field means "the copy out
+   * there matches this record" and nothing weaker. That is what lets the
+   * mirror be resumable: whatever is still null is whatever is still owed,
+   * however the last run ended.
+   */
+  publishedAt: string | null;
 }
 
 /**
@@ -68,7 +79,7 @@ export const ENRICHMENT_KEYS = [
   'categoryCandidates', 'categoryDecidedBy', 'categoryPerfect', 'categoryAnswer',
   'tier', 'tierConfidence', 'tierBy', 'tierAt', 'tierCategory',
   'status', 'validatedAt', 'validatedBy', 'validationNote', 'autoCategory',
-  'taxonomyVersion', 'feedVersion',
+  'taxonomyVersion', 'feedVersion', 'publishedAt',
 ] as const satisfies ReadonlyArray<keyof Enrichment>;
 
 export function enrichmentOf(p: TaggedProduct): Enrichment {
@@ -119,7 +130,15 @@ export function normalise(e: Partial<Enrichment> & { sku: string }): Enrichment 
     autoCategory: e.autoCategory ?? null,
     taxonomyVersion: e.taxonomyVersion ?? '',
     feedVersion: e.feedVersion ?? '',
+    publishedAt: e.publishedAt ?? null,
   };
+}
+
+/** Everything except the bookkeeping about publication. */
+function content(e: Enrichment): string {
+  const { publishedAt, ...rest } = e;
+  void publishedAt;
+  return JSON.stringify(rest);
 }
 
 export interface MarketingMeta {
@@ -178,7 +197,34 @@ export class MarketingStore {
   }
 
   get(sku: string) { return this.records.get(sku); }
-  put(e: Enrichment) { this.records.set(e.sku, normalise(e)); return this; }
+  /**
+   * Storing a record that differs from the one already held clears its
+   * publication stamp, because the copy in Firestore no longer matches it.
+   * Storing an identical one leaves the stamp alone, so re-running a tagging
+   * pass over an unchanged catalogue costs no writes at all.
+   */
+  put(e: Enrichment) {
+    const next = normalise(e);
+    const prev = this.records.get(next.sku);
+    if (prev && content(prev) !== content(next)) next.publishedAt = null;
+    else if (prev) next.publishedAt = next.publishedAt ?? prev.publishedAt;
+    this.records.set(next.sku, next);
+    return this;
+  }
+
+  /** Marks a record as mirrored, without touching anything else about it. */
+  markPublished(sku: string, at: string) {
+    const e = this.records.get(sku);
+    if (e) e.publishedAt = at;
+    return this;
+  }
+
+  /** What the mirror still owes: decided, and not published as it now stands. */
+  pendingPublish(): Enrichment[] {
+    return [...this.records.values()].filter(
+      (e) => e.categoryDecidedBy !== null && e.publishedAt === null,
+    );
+  }
   all() { return [...this.records.values()]; }
   get size() { return this.records.size; }
   get metadata() { return this.meta; }

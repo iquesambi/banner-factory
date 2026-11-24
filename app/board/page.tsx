@@ -3,12 +3,51 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Badge, Button, cn } from '@/components/ui/primitives';
-import { BOARD_COLUMNS, LANGUAGE_LABEL, type Job, type Stage } from '@/app/lib/types';
+import {
+  BOARD_COLUMNS, LANGUAGE_LABEL, REDO_STAGES,
+  allGood, anyVerdict, type Job, type Stage,
+} from '@/app/lib/types';
 import { BannerThumb } from '@/app/components/banner-thumb';
-import { Thumbs } from '@/app/components/thumbs';
+
+/** The order the work happens in, for deciding what counts as backwards. */
+const ORDER: Stage[] = ['queued', 'choosing', 'writing', 'drawing', 'ready'];
+const positionOf = (job: Job) => {
+  if (job.stage === 'failed') return ORDER.indexOf(job.png ? 'drawing' : job.pick ? 'writing' : 'choosing');
+  if (job.stage === 'review') return ORDER.indexOf('ready');
+  return ORDER.indexOf(job.stage);
+};
 
 export default function BoardPage() {
   const [jobs, setJobs] = useState<Job[] | null>(null);
+  /** The card being dragged, and the column it is over. */
+  const [held, setHeld] = useState<Job | null>(null);
+  const [overColumn, setOverColumn] = useState<Stage | null>(null);
+  const [redoing, setRedoing] = useState<string | null>(null);
+
+  /**
+   * Dragging a card back a column is how a person disagrees with what that
+   * stage produced. Only backwards: dragging forward would mean skipping
+   * work, and there is nothing a person can contribute by doing that.
+   */
+  async function redo(job: Job, to: Stage) {
+    if (!REDO_STAGES.includes(to)) return;
+    if (positionOf(job) <= ORDER.indexOf(to)) return;
+    setRedoing(job.id);
+    try {
+      await fetch(`/api/jobs/${job.id}`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ from: to }),
+      });
+    } finally {
+      setRedoing(null);
+    }
+  }
+
+  async function remove(job: Job) {
+    setJobs((all) => all?.filter((j) => j.id !== job.id) ?? null);
+    await fetch(`/api/jobs/${job.id}`, { method: 'DELETE' }).catch(() => undefined);
+  }
 
   /**
    * Polling, not pushing. The workflow already emits every stage and can POST
@@ -33,11 +72,17 @@ export default function BoardPage() {
     };
   }, []);
 
-  const rated = jobs?.filter((j) => j.rating) ?? [];
-  const liked = rated.filter((j) => j.rating === 'up').length;
+  const rated = jobs?.filter((j) => anyVerdict(j.verdicts)) ?? [];
+  const liked = rated.filter((j) => allGood(j.verdicts)).length;
 
   return (
-    <main className="w-full px-8 pb-14 pt-5">
+    /*
+      The page fills the window and stops there. The board below takes
+      whatever the header leaves, measured by the browser rather than by a
+      magic number, so a header that wraps at a narrow width does not push
+      the columns off the bottom.
+    */
+    <main className="flex h-[calc(100vh-60px)] w-full flex-col px-8 pb-6 pt-5">
       <div className="mb-5 flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="mb-1 text-[22px] font-semibold tracking-tight">Board</h1>
@@ -75,30 +120,56 @@ export default function BoardPage() {
       )}
 
       {jobs !== null && jobs.length > 0 && (
-        <div className="flex items-start gap-3.5 overflow-x-auto pb-2">
+        <div className="flex min-h-[260px] flex-1 items-stretch gap-3.5 overflow-x-auto overflow-y-hidden pb-2">
+          {/*
+            The board is as tall as the window and never taller. Columns used
+            to grow with their contents, so one busy column pushed the page
+            down and the other four became headers floating above empty space
+            you had to scroll past. Each keeps its own scroll now, and every
+            column header stays put.
+          */}
           {BOARD_COLUMNS.map((col) => {
             const inColumn = jobs.filter((j) => inStage(j, col.stage));
             /** Counted after grouping, so the number matches the cards shown. */
             const groups = group(inColumn);
+            const canDrop =
+              held !== null
+              && REDO_STAGES.includes(col.stage)
+              && positionOf(held) > ORDER.indexOf(col.stage);
             return (
               <section
                 key={col.stage}
-                className="flex min-w-[212px] flex-1 shrink-0 flex-col rounded-[11px] border bg-secondary/40"
+                onDragOver={(e) => { if (canDrop) { e.preventDefault(); setOverColumn(col.stage); } }}
+                onDragLeave={() => setOverColumn((c) => (c === col.stage ? null : c))}
+                onDrop={() => {
+                  const job = held;
+                  setOverColumn(null);
+                  setHeld(null);
+                  if (job && canDrop) void redo(job, col.stage);
+                }}
+                className={cn(
+                  'flex min-w-[212px] flex-1 shrink-0 flex-col overflow-hidden rounded-[11px] border bg-secondary/40',
+                  canDrop && 'border-dashed border-elgi-navy/50',
+                  overColumn === col.stage && canDrop && 'border-solid border-elgi-navy bg-blue-50/60',
+                )}
               >
-                <div className="flex items-center gap-2 px-3.5 pb-2 pt-3">
+                <div className="flex shrink-0 items-center gap-2 px-3.5 pb-2 pt-3">
                   <span className="h-[7px] w-[7px] rounded-full" style={{ background: col.dot }} />
                   <h2 className="text-[12.5px] font-semibold text-slate-700">{col.title}</h2>
                   <div className="flex-grow" />
                   <span className="tnum text-[11.5px] text-muted-foreground">{groups.length}</span>
                 </div>
 
-                <div className="flex flex-col gap-2 px-2.5 pb-3">
+
+                <div className="flex min-h-0 flex-grow flex-col gap-2 overflow-y-auto px-2.5 pb-3">
                   {groups.map((g) => (
                     <JobCard
                       key={g.primary.id}
                       job={g.primary}
                       alsoFrom={g.alsoFrom}
-                      onChange={(j) => setJobs((all) => all?.map((x) => (x.id === j.id ? j : x)) ?? null)}
+                      busy={redoing === g.primary.id}
+                      onPickUp={setHeld}
+                      onDelete={remove}
                     />
                   ))}
                   {groups.length === 0 && (
@@ -164,6 +235,9 @@ function cents(cost: Job['cost']): string {
 
 /** A failed job stays in the column it died in, so the failure has a place. */
 function inStage(job: Job, stage: Stage): boolean {
+  // `review` is no longer a column; a banner that exists is ready, and the
+  // thumbs on the card are the review. Old files still say review.
+  if (stage === 'ready' && job.stage === 'review') return true;
   if (job.stage === stage) return true;
   if (job.stage !== 'failed') return false;
   const reached = job.pick ? (job.brief ? 'drawing' : 'writing') : 'choosing';
@@ -173,24 +247,51 @@ function inStage(job: Job, stage: Stage): boolean {
 function JobCard({
   job,
   alsoFrom,
-  onChange,
+  busy,
+  onPickUp,
+  onDelete,
 }: {
   job: Job;
   alsoFrom: Job[];
-  onChange: (job: Job) => void;
+  busy: boolean;
+  onPickUp: (job: Job | null) => void;
+  onDelete: (job: Job) => void;
 }) {
   const failed = job.stage === 'failed';
   const running = ['choosing', 'writing', 'drawing'].includes(job.stage);
   const title = job.pick?.name ?? job.seed.name;
+  /**
+   * A card that will never move on its own is one a person may throw away.
+   * A running one is not draggable either: it is mid-flight, and asking for
+   * a stage again while that stage is happening is a race, not an opinion.
+   */
+  const stuck = failed || job.stage === 'queued';
 
   return (
     <article
+      draggable={!running && !busy}
+      onDragStart={() => onPickUp(job)}
+      onDragEnd={() => onPickUp(null)}
       className={cn(
-        'overflow-hidden rounded-[9px] border bg-card',
+        // shrink-0 or the column squashes its cards instead of scrolling:
+        // a flex child gives up its height before the parent overflows, so
+        // five cards were being crushed into 28px each.
+        'group relative shrink-0 overflow-hidden rounded-[9px] border bg-card',
+        !running && !busy && 'cursor-grab active:cursor-grabbing',
         failed && 'border-orange-200',
-        job.rating === 'up' && 'border-lime-300',
+        busy && 'opacity-60',
       )}
     >
+      {stuck && (
+        <button
+          type="button"
+          title="Throw this card away"
+          onClick={(e) => { e.preventDefault(); onDelete(job); }}
+          className="absolute right-1.5 top-1.5 z-10 hidden h-5 w-5 items-center justify-center rounded bg-card/90 text-[13px] leading-none text-muted-foreground hover:text-orange-800 group-hover:flex"
+        >
+          ×
+        </button>
+      )}
       <Link href={`/board/${job.id}`} className="block">
         {job.png && <BannerThumb job={job} />}
 
@@ -216,7 +317,9 @@ function JobCard({
                   ? `${job.cost.calls} calls · ${cents(job.cost)}`
                   : 'not started'}
             </span>
-            {running && <span className="text-[11px] text-elgi-navy">running…</span>}
+            {(running || busy) && (
+              <span className="text-[11px] text-elgi-navy">{busy ? 'redoing…' : 'running…'}</span>
+            )}
             {failed && <Badge tone="amber">needs a look</Badge>}
             {job.reuse && <Badge tone="green">reused</Badge>}
           </div>
@@ -234,11 +337,6 @@ function JobCard({
         </div>
       </Link>
 
-      {(job.stage === 'review' || job.stage === 'ready') && (
-        <div className="border-t px-2.5 py-2">
-          <Thumbs job={job} onChange={onChange} compact />
-        </div>
-      )}
     </article>
   );
 }

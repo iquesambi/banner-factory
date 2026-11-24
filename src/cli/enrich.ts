@@ -20,6 +20,7 @@ Da categoria aos produtos que as regras nao resolveram sozinhas.
                        demanda, quando a categoria aparece numa run.
   --batch=<n>          produtos por chamada (padrao 60)
   --redo               pergunta de novo o que um modelo ja decidiu
+  --no-publish         nao espelha para o Firestore enquanto roda
   --store=<dir>        outro diretorio de store
 
 exemplos:
@@ -56,6 +57,7 @@ const report = await enrichCategories(store, taxonomy, {
   ...(limit !== undefined ? { limit } : {}),
   ...(batch !== undefined ? { batch } : {}),
   redo: has('redo'),
+  publish: !has('no-publish'),
   dryRun,
   onProgress: (note) => {
     if (note === lastNote) return;
@@ -93,6 +95,11 @@ O QUE O MODELO DECIDIU
     virou categoria            ${String(report.resolvedByAsking).padStart(6)}
     nao casou com a arvore     ${String(report.unresolvedAfterAsking).padStart(6)}
   seguiu sem categoria         ${String(report.stillNone).padStart(6)}
+
+ESPELHO NO FIRESTORE
+  documentos publicados        ${String(report.published).padStart(6)}${
+  report.publishSkipped ? `\n  nao publicado                ${report.publishSkipped}` : ''
+}
 
 CUSTO
   chamadas                     ${String(report.calls).padStart(6)}

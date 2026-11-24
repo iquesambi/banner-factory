@@ -1,0 +1,40 @@
+rules_version = '2';
+
+// ===============================================================
+// Assumed Object Model
+// ===============================================================
+//
+// banners/{name}
+//   One rendered banner, 2048x768 PNG, written by the server through the
+//   Admin SDK after a run finishes. `name` is `{jobId}-{sku}-{language}.png`.
+//
+//   Uploaded by nobody from a client. The render runs in a headless browser
+//   on the server and is the most expensive step in the pipeline; a banner
+//   that arrived any other way would carry prices and savings nothing in this
+//   project had checked against the feed, which is exactly what the brief
+//   forbids.
+//
+//   Read by anyone signed in. The banner states a real product at a real
+//   price, so it is not public: the app hands out either a signed download
+//   URL or this path to a signed-in viewer.
+//
+// ===============================================================
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    match /banners/{name} {
+      allow read: if isAuthenticated();
+      allow write: if false;
+    }
+
+    // Default deny, explicit and last.
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -18,13 +18,18 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "enrich": "node --env-file-if-exists=.env --import tsx src/cli/enrich.ts"
+    "enrich": "node --env-file-if-exists=.env --import tsx src/cli/enrich.ts",
+    "publish": "node --env-file-if-exists=.env --import tsx src/cli/publish.ts",
+    "improve": "node --env-file-if-exists=.env --import tsx src/cli/improve.ts",
+    "traffic": "node --env-file-if-exists=.env --import tsx src/cli/traffic.ts"
   },
   "dependencies": {
     "@ai-sdk/google": "^4.0.124",
+    "@grpc/grpc-js": "^1.14.7",
     "@mastra/core": "^1.85.0",
     "@mastra/libsql": "^1.31.1",
     "firebase": "^13.4.0",
+    "firebase-admin": "^14.5.1",
     "next": "^15.5.4",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",

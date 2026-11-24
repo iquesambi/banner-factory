@@ -67,6 +67,9 @@ interface RunContext {
   skip: ChosenBadge[];
   finePrint: string | null;
   throttle: RpmThrottle;
+  /** Set only for an A/B variant; empty on every ordinary run. */
+  direction: string | null;
+  forceCta: string | null;
   options: { verbose: boolean; webhookUrl?: string | undefined };
 }
 
@@ -170,6 +173,18 @@ const inputSchema = z.object({
   storeDir: z.string().optional(),
   verbose: z.boolean().default(true),
   webhookUrl: z.string().optional(),
+  /**
+   * A direction for the copywriter, used by an A/B variant.
+   *
+   * It is appended to the prompt rather than replacing any of it, so a
+   * variant's copy goes through every check the control's did: the facts it
+   * may use, the closed list of buttons, the character limit, the accent
+   * rule. A researcher asking for something the checks forbid gets a
+   * rejected draft, not a banner.
+   */
+  direction: z.string().optional(),
+  /** A button the variant must use, when the variant IS the button. */
+  forceCta: z.string().optional(),
 });
 
 const stateSchema = z.object({ runId: z.string(), done: z.boolean().default(false) });
@@ -200,6 +215,8 @@ const buildStep = createStep({
       skip: [],
       finePrint: null,
       throttle: new RpmThrottle(),
+      direction: inputData.direction?.trim() ? inputData.direction.trim() : null,
+      forceCta: inputData.forceCta?.trim() ? inputData.forceCta.trim() : null,
       options: { verbose: inputData.verbose, webhookUrl: inputData.webhookUrl },
     });
 
@@ -233,7 +250,18 @@ const writeStep = createStep({
     if (inputData.done) return inputData;
     if (!hasApiKey()) throw new Error('GOOGLE_GENERATIVE_AI_API_KEY is not set');
 
-    const base = copyPrompt(c.facts);
+    /**
+     * The variant's direction goes LAST, after the brand's own rules, so a
+     * model reading top to bottom sees it as a note on this one banner
+     * rather than as a replacement for how the shop writes.
+     */
+    let base = copyPrompt(c.facts);
+    if (c.direction) {
+      base += `\n\nFor this banner specifically, a UX researcher asks for one thing to be different:\n${c.direction}\nEverything above still applies.`;
+    }
+    if (c.forceCta) {
+      base += `\n\nUse exactly this button, which is being tested: ${c.forceCta}`;
+    }
     const opts = { structuredOutput: { schema: copywriterSchema } };
     let lastIssues: string[] = [];
 
@@ -339,6 +367,28 @@ const strategyStep = createStep({
     };
 
     c.show = resolve(answer.show);
+
+    /**
+     * The previous price only means something next to the saving.
+     *
+     * This is not a decision about whether to promote anything — it is that
+     * "was 4.499" with no "save 2.900" beside it is a number on a banner with
+     * nothing to explain it. The strategist is asked for the pair; when it
+     * sends one half, the other half comes with it rather than the banner
+     * going out incoherent.
+     */
+    const hasKind = (kind: string) => c.show.some((s) => s.badge.kind === kind);
+    if (hasKind('oldPrice') && !hasKind('saving')) {
+      const saving = c.facts.available.find((b) => b.kind === 'saving');
+      if (saving) {
+        c.show.unshift({ badge: saving, reason: 'the previous price was chosen, and it needs the saving beside it to mean anything' });
+        c.copyIssues.push('the strategist showed the previous price without the saving, so the saving was put back');
+      } else {
+        c.show = c.show.filter((s) => s.badge.kind !== 'oldPrice');
+        c.copyIssues.push('the previous price was dropped: there is no saving to explain it');
+      }
+    }
+
     const shown = new Set(c.show.map((s) => s.badge.kind));
     c.skip = resolve(answer.skip).filter((s) => !shown.has(s.badge.kind));
     c.finePrint = answer.finePrint?.trim() ? answer.finePrint.trim() : null;

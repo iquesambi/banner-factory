@@ -192,6 +192,54 @@ export function describe(e: JobEvent): Described | null {
       };
     }
 
+    case 'policy.applied': {
+      if (d.skipped) {
+        return {
+          title: 'The business policy did not run',
+          detail: String(d.skipped),
+          tag: 'skipped',
+          free: true,
+        };
+      }
+      if (d.badIndex !== undefined && d.badIndex !== null) {
+        return {
+          title: 'The business policy answered off the list',
+          detail: `it chose ${String(d.badIndex)}, which was not offered — the ranking stands`,
+          ...paid(1),
+        };
+      }
+      const moved = num(d.movedFrom);
+      return {
+        title: d.decided ? 'The business policy chose' : 'The business policy had no preference',
+        detail: [
+          moved ? `moved choice ${moved} to the front` : 'kept the first choice',
+          str(d.because),
+        ].filter(Boolean).join(' — '),
+        ...paid(1),
+      };
+    }
+
+    /**
+     * A product that a person decided, not an agent: dragging the card back
+     * to Choosing, or asking for the seed itself or for a translation. It
+     * costs nothing — the product was named rather than found — and it has to
+     * appear in the timeline, or the card shows copy about a product with no
+     * record of how that product got there.
+     */
+    case 'pick.changed': {
+      const position = num(d.position);
+      const of = num(d.of);
+      return {
+        title: 'The product was decided by hand',
+        detail: [
+          str(d.now),
+          str(d.reason),
+          position && of ? `choice ${position} of ${of}` : null,
+        ].filter(Boolean).join(' · '),
+        ...FREE,
+      };
+    }
+
     case 'model.retry':
       return {
         title: 'The provider pushed back',

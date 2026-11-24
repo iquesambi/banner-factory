@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Elgiganten — demo</title>
+<!--
+  A shop page that exists to hold a banner.
+
+  No framework, no build step, no link to it from the factory: it is a
+  static file that happens to sit behind the same server, so that the tag
+  and the API are same-origin and nothing has to be configured to try it.
+
+  Everything on it comes from the product feed. The banner comes from
+  /api/serve through the tag, which also records the impression and the
+  click — the same two calls any other site would make.
+-->
+<link rel="stylesheet" href="shop.css">
+</head>
+<body>
+
+<header class="bar">
+  <img class="logo" src="logo.svg" alt="Elgiganten">
+  <span class="demo-chip">Demo</span>
+  <span class="spacer"></span>
+  <nav class="links">
+    <span>Hvidevarer</span><span>TV &amp; lyd</span><span>Computer</span><span>Mobil</span>
+  </nav>
+</header>
+
+<main>
+  <!-- The tag fills this. Two attributes are the whole integration. -->
+  <div class="hero" data-banner data-sku="" data-lang="da"></div>
+
+  <h2 class="shelf-title" id="shelf-title">Populære lige nu</h2>
+  <div class="shelf" id="shelf"></div>
+
+  <p class="note">
+    Demo for the Banner Factory challenge. Products and prices are read live from the
+    supplied feed; the banner is served by the factory and records its own impressions and
+    clicks. Nothing here is a real shop and nothing can be bought.
+  </p>
+</main>
+
+<script>
+/** The money format the whole shop uses: Danish kroner, however the page reads. */
+function kr(n) { return n.toLocaleString('da-DK') + ',-'; }
+
+function card(p) {
+  var a = document.createElement('a');
+  a.className = 'card';
+  a.href = 'produto.html?sku=' + encodeURIComponent(p.sku);
+
+  var shot = document.createElement('div');
+  shot.className = 'shot';
+  if (p.image) {
+    var img = document.createElement('img');
+    img.src = p.image;
+    img.alt = '';
+    img.loading = 'lazy';
+    shot.appendChild(img);
+  }
+
+  var name = document.createElement('div');
+  name.className = 'name';
+  name.textContent = p.name;
+
+  var price = document.createElement('div');
+  price.className = 'price';
+  price.textContent = kr(p.price);
+
+  a.appendChild(shot);
+  a.appendChild(name);
+  /** The saving only appears when the feed stands behind it, as on the banners. */
+  if (p.saveAmount && p.oldPrice) {
+    var save = document.createElement('div');
+    save.className = 'save';
+    save.textContent = 'SPAR ' + kr(p.saveAmount);
+    a.appendChild(save);
+    var was = document.createElement('div');
+    was.className = 'was';
+    was.textContent = 'Før ' + kr(p.oldPrice);
+    a.appendChild(was);
+  }
+  a.appendChild(price);
+  return a;
+}
+
+fetch('/api/shop')
+  .then(function (r) { return r.json(); })
+  .then(function (data) {
+    /**
+     * The hero is whichever product the factory most recently made a banner
+     * for. The tag is told the SKU after the page has loaded, and only then
+     * does it go and fetch the banner.
+     */
+    var box = document.querySelector('[data-banner]');
+    if (data.hero) {
+      box.setAttribute('data-sku', data.hero.sku);
+      box.setAttribute('data-lang', data.hero.language);
+    }
+    var tag = document.createElement('script');
+    tag.src = '/pixel.js';
+    document.body.appendChild(tag);
+
+    var shelf = document.getElementById('shelf');
+    var list = [data.product].concat(data.related).slice(0, 5);
+    list.forEach(function (p) { shelf.appendChild(card(p)); });
+  })
+  .catch(function () {
+    document.getElementById('shelf-title').textContent =
+      'Kunne ikke hente produkter — kører banner-fabrikken?';
+  });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Produkt — Elgiganten demo</title>
+<link rel="stylesheet" href="shop.css">
+</head>
+<body>
+
+<header class="bar">
+  <a href="index.html"><img class="logo" src="logo.svg" alt="Elgiganten"></a>
+  <span class="demo-chip">Demo</span>
+  <span class="spacer"></span>
+  <nav class="links">
+    <span>Hvidevarer</span><span>TV &amp; lyd</span><span>Computer</span><span>Mobil</span>
+  </nav>
+</header>
+
+<main>
+  <a class="back" href="index.html">&larr; Tilbage</a>
+  <div class="product" id="product"></div>
+
+  <h2 class="shelf-title" style="margin-top:30px">Andre kunder så også</h2>
+  <div class="shelf" id="shelf"></div>
+
+  <p class="note">
+    Demo for the Banner Factory challenge. The page is drawn from the supplied product feed.
+    Nothing can be bought and no order is placed.
+  </p>
+</main>
+
+<script>
+function kr(n) { return n.toLocaleString('da-DK') + ',-'; }
+function sku() { return new URLSearchParams(location.search).get('sku') || ''; }
+
+function stockLine(band) {
+  var b = (band || '').trim();
+  if (!b || b === '0') return { text: 'Ikke på lager', out: true };
+  return { text: b + ' på lager', out: false };
+}
+
+function card(p) {
+  var a = document.createElement('a');
+  a.className = 'card';
+  a.href = 'produto.html?sku=' + encodeURIComponent(p.sku);
+  var shot = document.createElement('div');
+  shot.className = 'shot';
+  if (p.image) {
+    var img = document.createElement('img');
+    img.src = p.image; img.alt = ''; img.loading = 'lazy';
+    shot.appendChild(img);
+  }
+  var name = document.createElement('div');
+  name.className = 'name';
+  name.textContent = p.name;
+  var price = document.createElement('div');
+  price.className = 'price';
+  price.textContent = kr(p.price);
+  a.appendChild(shot); a.appendChild(name); a.appendChild(price);
+  return a;
+}
+
+fetch('/api/shop?sku=' + encodeURIComponent(sku()))
+  .then(function (r) { return r.json(); })
+  .then(function (data) {
+    var p = data.product;
+    document.title = p.name + ' — Elgiganten demo';
+
+    var shot = document.createElement('div');
+    shot.className = 'shot';
+    if (p.image) {
+      var img = document.createElement('img');
+      img.src = p.image; img.alt = '';
+      shot.appendChild(img);
+    }
+
+    var buy = document.createElement('div');
+    buy.className = 'buy';
+
+    var h1 = document.createElement('h1');
+    h1.textContent = p.name;
+    buy.appendChild(h1);
+
+    if (p.saveAmount && p.oldPrice) {
+      var row = document.createElement('div');
+      row.className = 'row';
+      var save = document.createElement('span');
+      save.className = 'save';
+      save.textContent = 'SPAR ' + kr(p.saveAmount);
+      var was = document.createElement('span');
+      was.className = 'was';
+      was.textContent = 'Før ' + kr(p.oldPrice);
+      row.appendChild(save); row.appendChild(was);
+      buy.appendChild(row);
+    }
+
+    var price = document.createElement('div');
+    price.className = 'price';
+    price.textContent = kr(p.price);
+    buy.appendChild(price);
+
+    var st = stockLine(p.stockBand);
+    var stock = document.createElement('div');
+    stock.className = 'stock' + (st.out ? ' out' : '');
+    stock.textContent = st.text;
+    stock.style.margin = '6px 0 16px';
+    buy.appendChild(stock);
+
+    var btn = document.createElement('button');
+    btn.className = 'buy-btn';
+    btn.textContent = 'Læg i kurv';
+    /** It does nothing, and it says so rather than pretending to. */
+    btn.addEventListener('click', function () {
+      btn.textContent = 'Demo — intet bliver købt';
+      btn.disabled = true;
+    });
+    buy.appendChild(btn);
+
+    var spec = document.createElement('div');
+    spec.className = 'spec';
+    [['Varenummer', p.sku],
+     ['Energiklasse', p.energyClass || '—'],
+     ['Kategori', (p.category || '—').split('/').join(' › ')],
+     p.salesPoint ? ['Tilbud', p.salesPoint] : null]
+      .filter(Boolean)
+      .forEach(function (pair) {
+        var row = document.createElement('div');
+        var a = document.createElement('span'); a.textContent = pair[0];
+        var b = document.createElement('span'); b.textContent = pair[1];
+        row.appendChild(a); row.appendChild(b);
+        spec.appendChild(row);
+      });
+    buy.appendChild(spec);
+
+    var product = document.getElementById('product');
+    product.appendChild(shot);
+    product.appendChild(buy);
+
+    var shelf = document.getElementById('shelf');
+    data.related.forEach(function (x) { shelf.appendChild(card(x)); });
+  })
+  .catch(function () {
+    document.getElementById('product').textContent = 'Produktet blev ikke fundet.';
+  });
+</script>
+
+</body>
+</html>

@@ -15,6 +15,8 @@ export type RunStage =
   | 'promo.checked'
   | 'cluster.decided'
   | 'categories.picked'
+  | 'policy.applied'
+  | 'pick.changed'
   | 'category.pool.validated'
   | 'variant.matched'
   | 'tier.started'

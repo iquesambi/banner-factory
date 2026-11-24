@@ -30,14 +30,33 @@ const nextConfig = {
       '.js': ['.ts', '.tsx', '.js'],
       '.mjs': ['.mts', '.mjs'],
     };
+    /**
+     * Do not watch what the app WRITES.
+     *
+     * `.cache` holds the job files, the rendered banners and Mastra's SQLite
+     * database, and a run writes to all three — the job file on every single
+     * stage event. The dev watcher saw those writes as source changes and
+     * recompiled the server mid-run, which throws away the module state the
+     * runner lives in; the job then came back as "the server restarted while
+     * this was running". The data the app produces is not its source.
+     */
+    config.watchOptions = {
+      ...config.watchOptions,
+      ignored: ['**/node_modules/**', '**/.git/**', '**/.next/**', '**/.cache/**', '**/data/**'],
+    };
     return config;
   },
   /**
+   * Packages Next must require at runtime instead of bundling.
+   *
    * Mastra and libsql load native bindings and resolve their own files at
-   * runtime. Bundling them breaks both; these stay ordinary Node requires
-   * inside the server runtime.
+   * runtime, and firebase-admin reaches for gRPC and for optional native
+   * transports. A bundler cannot follow any of that and does not need to.
    */
-  serverExternalPackages: ['@mastra/core', '@mastra/libsql', '@libsql/client', '@ai-sdk/google'],
+  serverExternalPackages: [
+    '@mastra/core', '@mastra/libsql', '@libsql/client', '@ai-sdk/google',
+    'firebase-admin', '@google-cloud/firestore', '@grpc/grpc-js',
+  ],
   /** No ESLint config in this project; the build should not invent one. */
   eslint: { ignoreDuringBuilds: true },
 };

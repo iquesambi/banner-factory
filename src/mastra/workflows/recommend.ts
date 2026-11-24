@@ -18,6 +18,11 @@ import {
   recommender, recommenderFallback,
 } from '../agents/recommender.js';
 import { validateProductsWorkflow } from './validate-products.js';
+import { activeRules, isStale, loadPolicy } from '../../policy/index.js';
+import {
+  POLICY_FALLBACK_MODEL, POLICY_MODEL, judgePrompt, policyJudge,
+  policyJudgeFallback, policyJudgeSchema,
+} from '../agents/policy.js';
 import { bandOf, neighbourhood } from '../../recommend/tree.js';
 import { PROMO_THRESHOLD_PCT, promoShortcut } from '../../recommend/promo.js';
 import {
@@ -101,6 +106,15 @@ interface RunContext {
   pickedCategories: Array<{ path: string; reason: string }>;
   /** The picker's one-sentence reading of the customer. */
   profile: string | null;
+  /** What the business policy did with the candidates, when it ran. */
+  policy: {
+    applied: boolean;
+    decided: boolean;
+    because: string | null;
+    /** Where the chosen product sat before the policy spoke. */
+    movedFrom: number | null;
+    skipped: string | null;
+  } | null;
   pool: TaggedProduct[];
   variant: VariantMatch | null;
   picks: Array<{ product: TaggedProduct; reason: string }>;
@@ -340,6 +354,7 @@ const loadSeed = createStep({
       nearRoot: '',
       pickedCategories: [],
       profile: null,
+      policy: null,
       pool: [],
       variant: null,
       picks: [],
@@ -1006,6 +1021,133 @@ const recommendWidened = createStep({
   },
 });
 
+// ------------------------------------------------- 13. the business policy
+const applyPolicy = createStep({
+  id: 'apply-policy',
+  inputSchema: stateSchema,
+  outputSchema: stateSchema,
+  execute: async ({ inputData }) => {
+    const c = ctx(inputData.runId);
+
+    /**
+     * The last word, and the only step that reads the rules a person wrote.
+     *
+     * It runs in both modes and after every path that can produce more than
+     * one candidate — substitution, suggestion, variants — because the
+     * business's reasons for preferring one product are the same reasons
+     * either way. With one candidate there is nothing to apply it to: the
+     * policy chooses between options, it does not veto the only one.
+     */
+    if (c.picks.length < 2) return inputData;
+
+    const policy = loadPolicy();
+    const rules = activeRules(policy);
+
+    if (!rules.length) {
+      c.policy = { applied: false, decided: false, because: null, movedFrom: null, skipped: 'no rules are written' };
+      return inputData;
+    }
+    if (isStale(policy) || !policy.compiled) {
+      /**
+       * A policy compiled from older rules reads like the current ones and
+       * acts like the old ones, which is worse than not running it. The run
+       * says so rather than quietly using it.
+       */
+      c.policy = {
+        applied: false, decided: false, because: null, movedFrom: null,
+        skipped: policy.compiled
+          ? 'the rules changed since the policy was compiled — compile it again'
+          : 'the policy has not been compiled yet',
+      };
+      c.events.emit('policy.applied', { skipped: c.policy.skipped, rules: rules.length });
+      return inputData;
+    }
+    if (!hasApiKey()) {
+      c.policy = { applied: false, decided: false, because: null, movedFrom: null, skipped: 'no api key' };
+      return inputData;
+    }
+
+    /**
+     * Everything the feed states, and nothing derived.
+     *
+     * The sales point matters most: it is where the retailer writes
+     * "Klubpris", "Maks 1 pr. kunde" and "Spar 500", so a rule about
+     * members-only pricing or a purchase limit can only be written at all if
+     * this line reaches the prompt. The same shape is used for the seed, so
+     * the policy can compare like with like.
+     */
+    const shown = (p: TaggedProduct) => ({
+      name: p.name,
+      brand: p.brand,
+      category: p.category,
+      price: p.price,
+      oldPrice: p.oldPrice,
+      saveAmount: p.saveAmount,
+      discountPct: p.discountPct,
+      stockBand: p.stockBand,
+      tier: p.tier ?? null,
+      energyClass: p.energyClass,
+      salesPoint: p.salesPoint,
+    });
+
+    const prompt = judgePrompt({
+      policy: policy.compiled.policy,
+      mode: c.mode,
+      seed: shown(c.seed),
+      candidates: c.picks.map(({ product, reason }) => ({ ...shown(product), reason })),
+    });
+    const opts = { structuredOutput: { schema: policyJudgeSchema } };
+    const fb = policyJudgeFallback;
+    const { result, model: usedModel, ms } = await callModel(
+      c, 'apply-policy', POLICY_MODEL,
+      () => policyJudge.generate(prompt, opts),
+      POLICY_FALLBACK_MODEL,
+      fb ? () => fb.generate(prompt, opts) : null,
+    );
+    c.cost.record('apply-policy', usedModel, await readUsage(result), ms);
+
+    const verdict = result.object;
+    const at = (verdict?.item ?? 1) - 1;
+    const chosen = c.picks[at];
+
+    if (!chosen) {
+      // An index outside the list is the one failure this format allows, and
+      // the ranking we already had is a perfectly good answer.
+      c.policy = {
+        applied: true, decided: false, because: null, movedFrom: null,
+        skipped: `the policy answered with ${verdict?.item}, which is not on the list`,
+      };
+      c.events.emit('policy.applied', { badIndex: verdict?.item ?? null, picks: c.picks.length });
+      return inputData;
+    }
+
+    /**
+     * The chosen product moves to the front; the rest keep their order. The
+     * run's own ranking is not thrown away, because the policy was asked to
+     * choose a winner, not to re-rank the field.
+     */
+    if (at > 0) c.picks = [chosen, ...c.picks.filter((_, i) => i !== at)];
+
+    c.policy = {
+      applied: true,
+      decided: verdict?.decided ?? false,
+      because: verdict?.because ?? null,
+      movedFrom: at > 0 ? at + 1 : null,
+      skipped: null,
+    };
+    c.events.emit('policy.applied', {
+      rules: rules.length,
+      policyVersion: policy.version,
+      candidates: c.picks.length,
+      chose: chosen.product.sku,
+      movedFrom: at > 0 ? at + 1 : null,
+      decided: verdict?.decided ?? false,
+      because: verdict?.because ?? null,
+    });
+    return inputData;
+  },
+});
+
 // -------------------------------------------------------------- 9. finish
 const pickSummarySchema = z.object({
   rank: z.number(),
@@ -1029,6 +1171,13 @@ const resultSchema = z.object({
   }).nullable(),
   profile: z.string().nullable(),
   categories: z.array(z.object({ path: z.string(), reason: z.string() })),
+  policy: z.object({
+    applied: z.boolean(),
+    decided: z.boolean(),
+    because: z.string().nullable(),
+    movedFrom: z.number().nullable(),
+    skipped: z.string().nullable(),
+  }).nullable(),
   seed: z.object({
     sku: z.string(), name: z.string(), price: z.number(), stockBand: z.string(),
     category: z.string().nullable(), brand: z.string().nullable(),
@@ -1088,6 +1237,7 @@ const finish = createStep({
         : null,
       profile: c.profile,
       categories: c.pickedCategories,
+      policy: c.policy,
       seed: {
         sku: c.seed.sku, name: c.seed.name, price: c.seed.price,
         stockBand: c.seed.stockBand, category: c.seed.category, brand: c.seed.brand,
@@ -1180,6 +1330,7 @@ export const recommendWorkflow = createWorkflow({
   .then(classifyTier)
   .then(recommendSameTier)
   .then(recommendWidened)
+  .then(applyPolicy)
   .then(finish)
   .commit();
 

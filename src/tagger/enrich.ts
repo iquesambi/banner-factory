@@ -4,6 +4,7 @@ import type { TagStore } from '../store/index.js';
 import { CategoryTagger } from './category.js';
 import { CostMeter, readUsage } from '../cost/index.js';
 import { RpmThrottle, withRetry } from '../mastra/rpm.js';
+import { publishProducts } from '../store/firestore-products.js';
 import {
   ENRICH_BATCH, ENRICHER_FALLBACK_MODEL, ENRICHER_MODEL, LETTERS,
   askPrompt, askSchema, categoryAsker, categoryAskerFallback,
@@ -34,6 +35,15 @@ import {
 
 export type Pass = 'confirm' | 'choose' | 'ask';
 
+/**
+ * Products per Firestore round trip while mirroring.
+ *
+ * Firestore's own batch limit is 500 writes; this stays under it and keeps
+ * each round trip short enough that an interrupted run loses at most this
+ * many publications rather than the whole catalogue's worth.
+ */
+const PUBLISH_CHUNK = 400;
+
 export interface EnrichOptions {
   passes?: Pass[];
   /** Most products to touch, across all passes. */
@@ -43,6 +53,13 @@ export interface EnrichOptions {
   batch?: number;
   /** Bucket and report without calling anything. */
   dryRun?: boolean;
+  /**
+   * Mirror each batch to Firestore as it is decided, rather than dumping the
+   * catalogue at the end. A batch that was paid for is published the moment
+   * it exists, so an interrupted run leaves the work it did behind instead of
+   * losing the publication of all of it.
+   */
+  publish?: boolean;
   onProgress?: (note: string) => void;
 }
 
@@ -55,6 +72,10 @@ export interface EnrichReport {
   asked: number;
   resolvedByAsking: number;
   unresolvedAfterAsking: number;
+  /** Documents mirrored to Firestore while the run went. */
+  published: number;
+  /** Why publishing did not happen, when it did not. */
+  publishSkipped: string | null;
   calls: number;
   inputTokens: number;
   outputTokens: number;
@@ -139,7 +160,7 @@ export async function enrichCategories(
      * 3,881 products in advance would mostly buy answers nobody reads.
      */
     passes = ['ask'],
-    limit, redo = false, batch = ENRICH_BATCH, dryRun = false,
+    limit, redo = false, batch = ENRICH_BATCH, dryRun = false, publish = true,
     onProgress = () => {},
   } = options;
 
@@ -155,6 +176,7 @@ export async function enrichCategories(
     },
     confirmed: 0, rejected: 0, chosen: 0, stillNone: 0,
     asked: 0, resolvedByAsking: 0, unresolvedAfterAsking: 0,
+    published: 0, publishSkipped: null,
     calls: 0, inputTokens: 0, outputTokens: 0, usd: null,
     unmatchedAnswers: [],
   };
@@ -165,6 +187,20 @@ export async function enrichCategories(
   const confirmFb = categoryConfirmerFallback;
   const chooseFb = categoryChooserFallback;
   const askFb = categoryAskerFallback;
+
+  /**
+   * One batch up, as soon as it is settled.
+   *
+   * Reported, never thrown: the categories are already in the local store,
+   * which is what every CLI reads, and a mirror that cannot be written is a
+   * missing copy rather than a failed tagging run.
+   */
+  const mirror = async (skus: string[]) => {
+    if (!publish || !skus.length) return;
+    const out = await publishProducts(store, { only: skus });
+    report.published += out.written;
+    if (out.unavailable && !report.publishSkipped) report.publishSkipped = out.unavailable;
+  };
 
   const meter = new CostMeter();
   const throttle = new RpmThrottle();
@@ -198,13 +234,30 @@ export async function enrichCategories(
    * from "the rules guessed", and the on-demand validator would have to ask
    * about all of them — which is the bill this whole design exists to avoid.
    */
+  const recorded: string[] = [];
   for (const p of buckets.perfect) {
     if (p.categoryPerfect === true && p.categoryDecidedBy === 'rule') continue;
     record(p, tagger.tag(p.name));
+    recorded.push(p.sku);
   }
   for (const { product, proposed } of buckets.imperfect) {
     if (product.categoryPerfect === false && product.category === proposed) continue;
     record(product, tagger.tag(product.name));
+    recorded.push(product.sku);
+  }
+
+  /**
+   * These go up in chunks as they are settled, not in one dump at the end.
+   *
+   * Only the ones whose verdict actually CHANGED are in this list — a second
+   * run over an unchanged catalogue publishes nothing at all, because the two
+   * loops above skip products that already say what the rules would say.
+   */
+  for (let start = 0; start < recorded.length; start += PUBLISH_CHUNK) {
+    await mirror(recorded.slice(start, start + PUBLISH_CHUNK));
+    if (recorded.length > PUBLISH_CHUNK) {
+      onProgress(`regras · ${report.published}/${recorded.length} publicados`);
+    }
   }
 
   // ------------------------------------------------------------- confirm
@@ -249,8 +302,9 @@ export async function enrichCategories(
           rejected.push({ product: p, options: entry.options });
         }
       }
+      await mirror(group.map((g) => g.product.sku));
       touched += group.length;
-      onProgress(`confirm · ${report.confirmed} yes · ${report.rejected} no`);
+      onProgress(`confirm · ${report.confirmed} yes · ${report.rejected} no · ${report.published} publicados`);
     }
   }
 
@@ -312,7 +366,8 @@ export async function enrichCategories(
         }
         store.put(p);
       }
-      onProgress(`choose · ${report.chosen} corrected · ${report.stillNone} left with none`);
+      await mirror(group.map((g) => g.product.sku));
+      onProgress(`choose · ${report.chosen} corrected · ${report.stillNone} left with none · ${report.published} publicados`);
     }
   }
 
@@ -376,8 +431,9 @@ export async function enrichCategories(
         }
         store.put(p);
       }
+      await mirror(group.map((p) => p.sku));
       touched += group.length;
-      onProgress(`ask · ${report.resolvedByAsking} placed · ${report.unresolvedAfterAsking} still none`);
+      onProgress(`ask · ${report.resolvedByAsking} placed · ${report.unresolvedAfterAsking} still none · ${report.published} publicados`);
     }
   }
 

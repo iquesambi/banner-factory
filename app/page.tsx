@@ -87,7 +87,19 @@ export default function SearchPage() {
     });
   }
 
-  async function generate() {
+  /**
+   * Two ways to send the same queue.
+   *
+   * `recommend` is the product the factory is for: the matcher reads the
+   * seed and the policy decides what to put in front of the customer
+   * instead. `seed` skips all of that and puts the queued product itself on
+   * the banner — which is a different job, not a worse recommendation, and
+   * the honest thing to compare a recommendation against.
+   *
+   * Only the choosing is skipped either way. The copy and the artwork are
+   * made for whatever product ends up on it.
+   */
+  async function generate(mode: 'recommend' | 'seed' = 'recommend') {
     if (!queue.length || sending) return;
     setSending(true);
     setError(null);
@@ -97,7 +109,13 @@ export default function SearchPage() {
         headers: { 'content-type': 'application/json' },
         // Whether to reuse an existing banner is a business rule, not a
         // per-run choice: it lives on the Rules screen.
-        body: JSON.stringify({ items: queue.map((i) => ({ sku: i.sku, language: i.language })) }),
+        body: JSON.stringify({
+          items: queue.map((i) => ({
+            sku: i.sku,
+            language: i.language,
+            ...(mode === 'seed' ? { pick: i.sku, how: 'seed' } : {}),
+          })),
+        }),
       });
       if (!res.ok) {
         const body = (await res.json().catch(() => ({}))) as { error?: string };
@@ -217,7 +235,21 @@ export default function SearchPage() {
 
         <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
           <Segmented options={LANGUAGES} value={language} onChange={setLanguage} label="Language for what you add next" />
-          <Button onClick={generate} disabled={!queue.length || sending}>
+          {/*
+            The secondary action, and secondary on purpose: the thing this
+            factory does is recommend. A banner of the seed itself is what
+            you reach for when you want to see the product the customer was
+            looking at, or something to hold a recommendation up against.
+          */}
+          <Button
+            variant="outline"
+            onClick={() => generate('seed')}
+            disabled={!queue.length || sending}
+            title="Put the queued products themselves on banners, with no recommendation"
+          >
+            Banner for the seed
+          </Button>
+          <Button onClick={() => generate()} disabled={!queue.length || sending}>
             {sending ? 'Starting…' : 'Generate now'}
             {queue.length > 0 && (
               <span className="rounded-full bg-white/20 px-2 py-0.5 text-xs font-semibold">{queue.length}</span>

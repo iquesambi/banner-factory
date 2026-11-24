@@ -815,3 +815,161 @@ As execuções anteriores, lidas do storage do Mastra:
 ```bash
 npm run runs
 ```
+
+## O ciclo de aperfeiçoamento dos prompts
+
+O feedback por etapa (produto / texto / layout) alimenta um laço que reescreve
+as instruções dos agentes. Ele nunca roda sozinho: custa chamadas a um modelo
+maior, e isso é decisão de alguém.
+
+O que cada prompt está esperando:
+
+```bash
+npm run improve
+```
+
+Rodar o laço para um agente — lê o feedback, reescreve as instruções, compara
+as duas versões em produtos de verdade e promove ou retrocede:
+
+```bash
+npm run improve -- copywriter
+```
+
+Propor sem comparar (a candidata fica esperando uma pessoa):
+
+```bash
+npm run improve -- copywriter --no-eval
+```
+
+Uma pessoa aceita ou recusa a candidata:
+
+```bash
+npm run improve -- --promote=copywriter
+```
+
+Voltar para a versão anterior depois de promovida:
+
+```bash
+npm run improve -- --rollback=copywriter
+```
+
+Quem promove — `human` espera uma pessoa, `auto` deixa o revisor promover:
+
+```bash
+npm run improve -- --approval=auto
+```
+
+A tela `/prompts` faz tudo isso com botões, mostra a evidência acumulada, a
+candidata com o resultado do revisor caso a caso, e o histórico de versões.
+As instruções base continuam no código, em cada agente; o que a tela promove
+é uma revisão por cima, guardada em `.cache/prompts.json`.
+
+## Medição e testes A/B
+
+Primeiro mede, depois testa. A tela `/measure` mostra a taxa de clique de cada
+banner contra a dos outros, com p-valor; só um banner que está medidamente
+atrás ganha a atenção do UX researcher.
+
+Um site de verdade integra dois endpoints:
+
+```bash
+curl "http://localhost:3000/api/serve?sku=907583&lang=da"
+```
+
+```bash
+curl -X POST http://localhost:3000/api/track -H 'content-type: application/json' -d '{"jobId":"<id>","event":"click"}'
+```
+
+`/api/serve` devolve qual banner mostrar — sorteando entre os dois braços
+quando há teste rodando — e já registra a impressão. O clique é o site que
+reporta.
+
+Como não existe site vivo ainda, há um simulador. O que ele escreve fica em
+contadores separados, nunca somados aos reais, aparece marcado em toda tela e
+é recusado como evidência pelo ciclo de prompts:
+
+```bash
+npm run traffic -- --job=<jobId> --impressions=2000 --rate=0.02
+```
+
+```bash
+npm run traffic -- --experiment=<id> --impressions=8000 --rate=0.02 --lift=0.3
+```
+
+```bash
+npm run traffic -- --clear
+```
+
+O tamanho de amostra é fixado quando o teste abre. Antes dele, qualquer
+leitura é registrada como espiada (`peek`) e não como achado — mesmo com
+p abaixo de 0,05.
+
+## O site de demonstração
+
+HTML, CSS e JavaScript puros em `public/demo/`, sem Next e sem build. Não há
+link para ele em lugar nenhum da fábrica — é arquivo estático atrás do mesmo
+servidor, o que deixa a tag e a API na mesma origem.
+
+```
+http://localhost:3000/demo/index.html
+```
+
+A integração inteira são duas linhas:
+
+```html
+<div data-banner data-sku="907583" data-lang="da"></div>
+<script src="http://localhost:3000/pixel.js"></script>
+```
+
+A tag lê o sku da div, pede o banner a `/api/serve` (que já registra a
+impressão e sorteia os braços quando há teste A/B), desenha a imagem e manda
+o clique por `sendBeacon` — que sobrevive à navegação, ao contrário de um
+fetch comum. Nenhum cookie, nenhum identificador, nada pessoal: só o id do
+banner e a palavra "impression" ou "click".
+
+`/api/serve`, `/api/track` e `/api/shop` aceitam outras origens, então a tag
+roda em qualquer site. O resto da aplicação continua de mesma origem.
+
+Os cinco produtos da prateleira saem direto do feed — mesma seção, em
+estoque, com foto — e não passam pelo recomendador: uma página de loja que
+chamasse o matcher gastaria dinheiro a cada carregamento.
+
+## Perfis e áreas
+
+Cinco papéis: admin, marketing, copywriter, strategist e art director. Todo
+mundo abre todas as telas — um copywriter que não pode olhar o layout
+trabalha pior. O que o papel decide é **de quem este sistema registra
+julgamento**, porque cada veredito entra nas instruções de um agente
+diferente.
+
+| papel        | julga                          |
+|--------------|--------------------------------|
+| admin        | produto, texto, layout         |
+| marketing    | produto, texto, layout         |
+| copywriter   | texto                          |
+| strategist   | produto, texto                 |
+| art director | layout                         |
+
+O strategist tem dois porque o agente dele escreve os selos ao lado do preço,
+que vivem dentro do veredito de texto, e porque o que a loja promove é
+decisão dele.
+
+A checagem que vale acontece no servidor, em `PATCH /api/jobs/[id]`: o token
+do Firebase é verificado, o papel sai de `profiles/{uid}` — coleção que só o
+Admin SDK escreve — e um veredito fora da área é recusado com 403. A tela
+cinza os botões por cortesia; quem manda é a rota.
+
+Quem já nasce com papel está em `config/people.json`, versionado junto com o
+projeto — `adm@email.com` como admin e `da@email.com` como diretor de arte.
+Fica no repositório de propósito: é isso que faz quem recebe o projeto
+conseguir entrar. Um email ali vence o que estiver gravado no perfil, que é a
+porta de volta quando alguém se tira um papel por engano.
+
+São contas de demonstração. Cadastro por email e senha não prova que o
+endereço é seu, então quem lê o arquivo pode se registrar como
+`adm@email.com`. Para valer de verdade, endereços reais e um provedor que
+verifique — `ADMIN_EMAILS` no ambiente substitui o arquivo inteiro quando não
+se quer os endereços no repositório. Numa máquina sem
+Admin SDK configurado o servidor não consegue identificar ninguém: tudo é
+permitido, nada é atribuído, e as telas dizem isso em vez de fingir uma
+segurança que não existe.
