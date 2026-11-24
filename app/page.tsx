@@ -37,7 +37,6 @@ export default function SearchPage() {
   const [language, setLanguage] = useState<Language>('da');
   const [queue, setQueue] = useState<QueueItem[]>([]);
   const [sending, setSending] = useState(false);
-  const [reuse, setReuse] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   /**
@@ -96,10 +95,9 @@ export default function SearchPage() {
       const res = await fetch('/api/jobs', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          items: queue.map((i) => ({ sku: i.sku, language: i.language })),
-          reuse,
-        }),
+        // Whether to reuse an existing banner is a business rule, not a
+        // per-run choice: it lives on the Rules screen.
+        body: JSON.stringify({ items: queue.map((i) => ({ sku: i.sku, language: i.language })) }),
       });
       if (!res.ok) {
         const body = (await res.json().catch(() => ({}))) as { error?: string };
@@ -228,22 +226,6 @@ export default function SearchPage() {
         </div>
 
         {error && <p className="mt-3 text-sm text-destructive">{error}</p>}
-
-        <label className="mt-5 flex cursor-pointer items-start gap-2.5 rounded-[10px] border bg-card px-3.5 py-3">
-          <input
-            type="checkbox"
-            checked={reuse}
-            onChange={(e) => setReuse(e.target.checked)}
-            className="mt-0.5 h-3.5 w-3.5 shrink-0 accent-[#0e2d7c]"
-          />
-          <span className="min-w-0">
-            <span className="text-[13px] font-medium">Reuse a banner we already have</span>
-            <span className="mt-0.5 block text-[12.5px] leading-relaxed text-muted-foreground">
-              Only when every fact it prints is still true today: in stock, same price, same saving. A reused
-              banner costs nothing to make.
-            </span>
-          </span>
-        </label>
 
         <p className="mt-3.5 text-center text-[12.5px] text-muted-foreground">
           Pick the language first; it is stored on each card, so the same product can sit in the queue twice.

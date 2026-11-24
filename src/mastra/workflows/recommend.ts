@@ -18,6 +18,18 @@ import {
   recommender, recommenderFallback,
 } from '../agents/recommender.js';
 import { validateProductsWorkflow } from './validate-products.js';
+import { bandOf, neighbourhood } from '../../recommend/tree.js';
+import { PROMO_THRESHOLD_PCT, promoShortcut } from '../../recommend/promo.js';
+import {
+  CATEGORY_PICKER_FALLBACK_MODEL, CATEGORY_PICKER_MODEL, MAX_PICKED_CATEGORIES,
+  type CategoryOption,
+  categoryPickSchema, categoryPicker, categoryPickerFallback, categoryPickerPrompt,
+} from '../agents/category-picker.js';
+import {
+  CLUSTER_FALLBACK_MODEL, CLUSTER_LABEL, CLUSTER_MODEL, CLUSTER_NOTE,
+  clusterClassifier, clusterClassifierFallback, clusterFromBrand, clusterPrompt,
+  clusterSchema, type Cluster,
+} from '../agents/cluster.js';
 
 /**
  * Products per tier-classification request.
@@ -39,9 +51,33 @@ const TIER_BATCH = 150;
 const POOL_VALIDATION_CAP = 40;
 /** Most candidates ever shown to the recommender in one call. */
 const CANDIDATE_CEILING = 60;
+/**
+ * How the shortlist is built when the seed is in stock.
+ *
+ * The pool is a whole department, so something has to cut it down, and the cut
+ * is where the quality of the suggestion is decided. An even sample of the
+ * floor would bury the laptops among a thousand cables. These quotas keep the
+ * three bands in proportion: mostly the same thing, some of the same kind, and
+ * a deliberate slice of the department around it.
+ *
+ * They add to 140, so the seed and the tier-eligible bands fit in one
+ * classification call instead of sixteen.
+ */
+const SHORTLIST = { same: 50, kind: 20, picked: 70 } as const;
+/** Of the candidates shown when suggesting, how many come from band 2. */
+const ADJACENT_CANDIDATES = 20;
+
+/**
+ * Two jobs share this workflow. With the seed OUT of stock it substitutes:
+ * the customer wanted a specific thing and we have to replace it. With the
+ * seed IN stock it suggests: nothing needs replacing, so the banner is an
+ * offer, and the decisions below are the ways that offer can be reached.
+ */
+type Mode = 'substitute' | 'suggest';
 
 type Decision =
-  | 'seed-in-stock'
+  | 'promo-seed'
+  | 'promo-variant'
   | 'exact-variant'
   | 'model-same-tier'
   | 'model-widened'
@@ -53,6 +89,18 @@ interface RunContext {
   store: TagStore;
   taxonomyVersion: string;
   seed: TaggedProduct;
+  mode: Mode;
+  /** Which customer the seed suggests. Only read in 'suggest' mode. */
+  cluster: Cluster | null;
+  clusterBy: 'brand' | 'model' | null;
+  /** The node the pool was drawn from: the leaf, or the department when widened. */
+  poolRoot: string;
+  /** The node holding products of the SAME KIND, which is where tier means something. */
+  nearRoot: string;
+  /** The sections of the shop the picker chose, in its own order. */
+  pickedCategories: Array<{ path: string; reason: string }>;
+  /** The picker's one-sentence reading of the customer. */
+  profile: string | null;
   pool: TaggedProduct[];
   variant: VariantMatch | null;
   picks: Array<{ product: TaggedProduct; reason: string }>;
@@ -97,6 +145,90 @@ function spreadSample<T>(list: T[], n: number): T[] {
   const step = (list.length - 1) / (n - 1);
   for (let i = 0; i < n; i++) out.push(list[Math.round(i * step)]!);
   return [...new Set(out)];
+}
+
+/**
+ * Where to look for candidates, which is a different question in each mode.
+ *
+ * Substituting, the same leaf category is right: the customer wanted that
+ * thing. Suggesting, the leaf only returns near-identical products they have
+ * already seen, so the pool widens to the parent node and everything under it
+ * — siblings and their children — with the department guard in `neighbourhood`.
+ */
+function poolFor(c: RunContext): { products: TaggedProduct[]; root: string; nearRoot: string } {
+  if (c.mode === 'substitute') {
+    return {
+      products: c.store.byCategory(c.seed.category!).filter(inStock),
+      root: c.seed.category!,
+      nearRoot: c.seed.category!,
+    };
+  }
+  const all = c.store.all();
+  const n = neighbourhood(c.seed, all);
+  /**
+   * Before the picker has spoken, the department is the pool: it is what the
+   * free steps need and what the run falls back to with no API key. After it
+   * has, the pool is exactly the sections it chose — including, or not
+   * including, the one the product itself sits in. Declining to show more of
+   * the same thing is a real answer and is left to stand.
+   */
+  if (!c.pickedCategories.length) {
+    return { products: n.products.filter(inStock), root: n.root, nearRoot: n.nearRoot };
+  }
+  const paths = c.pickedCategories.map((x) => x.path);
+  const products = all.filter(
+    (p) =>
+      p.category !== null &&
+      paths.some((k) => p.category === k || p.category!.startsWith(`${k}/`)),
+  );
+  return { products: products.filter(inStock), root: paths.join(' + '), nearRoot: n.nearRoot };
+}
+
+const band = (c: RunContext, p: TaggedProduct) =>
+  bandOf(c.seed.category!, c.nearRoot, p.category);
+
+/**
+ * Cuts a department-sized pool down to a shortlist that still has a shape.
+ *
+ * Band 2 is not sampled by price like the others. An even price walk across
+ * two thousand accessories returns whatever the department happens to stock
+ * most of, which is cables. Instead it goes round-robin across the
+ * department's own sections, so the slice holds a monitor AND a printer AND a
+ * mouse — different answers rather than forty versions of one.
+ */
+function shaped(c: RunContext, products: TaggedProduct[]): TaggedProduct[] {
+  if (c.mode === 'substitute') return products;
+  const byPrice = (a: TaggedProduct, b: TaggedProduct) => b.price - a.price;
+
+  const b0: TaggedProduct[] = [], b1: TaggedProduct[] = [], b2: TaggedProduct[] = [];
+  for (const p of products) {
+    const n = band(c, p);
+    (n === 0 ? b0 : n === 1 ? b1 : b2).push(p);
+  }
+
+  /**
+   * Everything outside the product's own kind is split by SECTION and each
+   * section gets an equal share, spread across its own price range. Sampling
+   * that band as one list would hand back whatever the shop stocks most of,
+   * which is cables; by section, the shortlist holds a monitor AND a printer
+   * AND a bag — different answers instead of forty versions of one.
+   */
+  const keys = c.pickedCategories.length
+    ? c.pickedCategories.map((x) => x.path)
+    : [...new Set(b2.map((p) => (p.category ?? '').split('/').slice(0, 2).join('/')))];
+  const groups = keys
+    .map((k) => b2.filter((p) => p.category === k || p.category!.startsWith(`${k}/`)).sort(byPrice))
+    .filter((g) => g.length);
+  const per = groups.length ? Math.ceil(SHORTLIST.picked / groups.length) : 0;
+  const far = groups.flatMap((g) => spreadSample(g, per));
+
+  return [
+    ...new Set([
+      ...spreadSample(b0.sort(byPrice), SHORTLIST.same),
+      ...spreadSample(b1.sort(byPrice), SHORTLIST.kind),
+      ...far.slice(0, SHORTLIST.picked),
+    ]),
+  ];
 }
 
 /**
@@ -201,6 +333,13 @@ const loadSeed = createStep({
       store,
       taxonomyVersion: taxonomy.version,
       seed,
+      mode: 'substitute',
+      cluster: null,
+      clusterBy: null,
+      poolRoot: '',
+      nearRoot: '',
+      pickedCategories: [],
+      profile: null,
       pool: [],
       variant: null,
       picks: [],
@@ -290,12 +429,14 @@ const checkStock = createStep({
     if (!available) return inputData;
 
     /**
-     * The seed itself is the answer. The brief allows the banner to show the
-     * seed product, and nothing here can beat the thing the customer was
-     * actually looking at. No model runs, so this path costs nothing.
+     * In stock, so there is nothing to substitute. This used to end the run
+     * with the seed as its own answer, which is true but useless: a banner
+     * showing the exact product someone just looked at tells them nothing they
+     * do not already know. It becomes a suggestion instead, and the rest of the
+     * run changes shape accordingly.
      */
-    c.picks = [{ product: c.seed, reason: 'The product the customer was looking at is in stock.' }];
-    return pass(inputData, 'seed-in-stock');
+    c.mode = 'suggest';
+    return inputData;
   },
 });
 
@@ -309,7 +450,8 @@ const buildPool = createStep({
     if (inputData.done) return inputData;
     if (!c.seed.category) {
       c.events.emit('run.failed', { reason: 'seed has no category' });
-      c.noneReason = 'O produto semente não tem categoria, então não há onde buscar substituto.';
+      // These reasons are shown on the board, which is in English.
+      c.noneReason = 'The seed product has no category, so there is nowhere to look.';
       return pass(inputData, 'none');
     }
     /**
@@ -326,25 +468,74 @@ const buildPool = createStep({
         category: c.seed.category,
       });
       c.noneReason =
-        `A categoria do produto semente é "${c.seed.category}", que é raiz de ` +
-        `departamento e não uma categoria de produto. Buscar substituto nela não ` +
-        `significa nada, então paramos antes de gastar chamada.`;
+        `The seed product sits on "${c.seed.category}", which is a department root ` +
+        `rather than a product category. Searching it would mean nothing, so this ` +
+        `stopped before spending a call.`;
       return pass(inputData, 'none');
     }
-    c.pool = c.store.byCategory(c.seed.category).filter(inStock);
-    c.counts.categoryPool = c.pool.length;
+    const built = poolFor(c);
+    c.poolRoot = built.root;
+    c.nearRoot = built.nearRoot;
+    const shortlist = shaped(c, built.products);
+    c.pool = shortlist;
+    c.counts.categoryPool = built.products.length;
+    c.counts.shortlist = shortlist.length;
+    const bands = [0, 0, 0];
+    for (const p of shortlist) bands[band(c, p)]!++;
+    c.events.emit('pool.built', {
+      mode: c.mode,
+      root: built.root,
+      nearRoot: built.nearRoot,
+      inStock: built.products.length,
+      shortlist: shortlist.length,
+      ...(c.mode === 'suggest'
+        ? { sameCategory: bands[0], sameKind: bands[1], otherSections: bands[2] }
+        : {}),
+    });
     return inputData;
   },
 });
 
-// ---------------------------------------------------- 5. exact variant
+// ------------------------------------------------ 5. promotion (free)
+const promoShortcutStep = createStep({
+  id: 'promo-shortcut',
+  inputSchema: stateSchema,
+  outputSchema: stateSchema,
+  execute: async ({ inputData }) => {
+    const c = ctx(inputData.runId);
+    if (inputData.done || c.mode !== 'suggest') return inputData;
+
+    /**
+     * The cheapest answer there is. A real price cut on the thing the customer
+     * was already looking at — or on the same product in another variant — is
+     * the offer, and no judgement is needed to see that. Deliberately before
+     * every paid step, which is why the agents often never run.
+     */
+    const hit = promoShortcut(c.seed, poolFor(c).products);
+    c.events.emit('promo.checked', {
+      threshold: PROMO_THRESHOLD_PCT,
+      found: Boolean(hit),
+      ...(hit
+        ? { how: hit.how, sku: hit.product.sku, name: hit.product.name, discountPct: hit.discountPct }
+        : {}),
+    });
+    if (!hit) return inputData;
+
+    c.picks = [{ product: hit.product, reason: hit.reason }];
+    return pass(inputData, hit.how === 'seed' ? 'promo-seed' : 'promo-variant');
+  },
+});
+
+// ---------------------------------------------------- 6. exact variant
 const exactVariant = createStep({
   id: 'exact-variant',
   inputSchema: stateSchema,
   outputSchema: stateSchema,
   execute: async ({ inputData }) => {
     const c = ctx(inputData.runId);
-    if (inputData.done) return inputData;
+    // Only substitution cares about variants: it is how the same product is
+    // found in another colour. With the seed in stock there is no gap to fill.
+    if (inputData.done || c.mode === 'suggest') return inputData;
 
     const match = findExactVariant(c.seed, c.pool);
     c.variant = match;
@@ -428,8 +619,8 @@ const validatePool = createStep({
     }
 
     c.store = new TagStore(c.options.storeDir).load();
-    c.pool = c.store.byCategory(c.seed.category!).filter(inStock);
-    c.counts.categoryPool = c.pool.length;
+    c.pool = shaped(c, poolFor(c).products);
+    c.counts.shortlist = c.pool.length;
     c.counts.poolValidated = out.checked;
     c.counts.poolMoved = out.corrected;
 
@@ -445,7 +636,150 @@ const validatePool = createStep({
   },
 });
 
-// ------------------------------------------------------ 7. classify tier
+// --------------------------------------------------- 7. classify cluster
+const classifyCluster = createStep({
+  id: 'classify-cluster',
+  inputSchema: stateSchema,
+  outputSchema: stateSchema,
+  execute: async ({ inputData }) => {
+    const c = ctx(inputData.runId);
+    if (inputData.done || c.mode !== 'suggest') return inputData;
+
+    /**
+     * Free first. Where the brand alone settles it the model has nothing to
+     * add: measured on this catalogue, that is 10.6% of in-stock seeds, spread
+     * evenly across the four groups.
+     */
+    const free = clusterFromBrand(c.seed);
+    if (free) {
+      c.cluster = free;
+      c.clusterBy = 'brand';
+      c.cost.saved();
+      c.events.emit('cluster.decided', {
+        cluster: free, by: 'brand', brand: c.seed.brand, confidence: 'high',
+      });
+      return inputData;
+    }
+
+    if (!hasApiKey()) {
+      c.events.emit('cluster.decided', { skipped: true, reason: 'no api key' });
+      return inputData;
+    }
+
+    const prompt = clusterPrompt(c.seed);
+    const opts = { structuredOutput: { schema: clusterSchema } };
+    const fb = clusterClassifierFallback;
+    const { result, model: usedModel, ms } = await callModel(
+      c, 'classify-cluster', CLUSTER_MODEL,
+      () => clusterClassifier.generate(prompt, opts),
+      CLUSTER_FALLBACK_MODEL,
+      fb ? () => fb.generate(prompt, opts) : null,
+    );
+    c.cost.record('classify-cluster', usedModel, await readUsage(result), ms);
+
+    const answer = result.object;
+    c.cluster = (answer?.cluster as Cluster | undefined) ?? null;
+    c.clusterBy = c.cluster ? 'model' : null;
+    c.events.emit('cluster.decided', {
+      cluster: c.cluster,
+      by: 'model',
+      reason: answer?.reason ?? null,
+      confidence: answer?.confidence ?? null,
+    });
+    return inputData;
+  },
+});
+
+// -------------------------------------------------- 8. pick the sections
+const pickCategories = createStep({
+  id: 'pick-categories',
+  inputSchema: stateSchema,
+  outputSchema: stateSchema,
+  execute: async ({ inputData }) => {
+    const c = ctx(inputData.runId);
+    if (inputData.done || c.mode !== 'suggest') return inputData;
+    if (!hasApiKey()) {
+      // The department pool and its bands stay as they are: a worse answer
+      // than the picker's, but a working one.
+      c.events.emit('categories.picked', { skipped: true, reason: 'no api key' });
+      return inputData;
+    }
+
+    /**
+     * The closed set: every second-level node that actually has stock, with
+     * its count. 70 of them, about 560 tokens — the whole shop fits in one
+     * prompt, so the picker is never limited to the department the product
+     * happens to sit in.
+     */
+    const counts = new Map<string, number>();
+    for (const p of c.store.all()) {
+      if (!p.category || !inStock(p)) continue;
+      const segments = p.category.split('/');
+      if (segments.length < 2) continue;
+      const key = segments.slice(0, 2).join('/');
+      counts.set(key, (counts.get(key) ?? 0) + 1);
+    }
+    const options: CategoryOption[] = [...counts]
+      .map(([path, count]) => ({ path, count }))
+      .sort((a, b) => a.path.localeCompare(b.path));
+
+    const seedKey = c.seed.category!.split('/').slice(0, 2).join('/');
+    const seedIndex = options.findIndex((o) => o.path === seedKey);
+
+    const prompt = categoryPickerPrompt({
+      seed: c.seed,
+      options,
+      seedOption: seedIndex >= 0 ? seedIndex + 1 : null,
+      cluster: c.cluster ? { label: CLUSTER_LABEL[c.cluster], note: CLUSTER_NOTE[c.cluster] } : null,
+    });
+    const opts = { structuredOutput: { schema: categoryPickSchema } };
+    const fb = categoryPickerFallback;
+    const { result, model: usedModel, ms } = await callModel(
+      c, 'pick-categories', CATEGORY_PICKER_MODEL,
+      () => categoryPicker.generate(prompt, opts),
+      CATEGORY_PICKER_FALLBACK_MODEL,
+      fb ? () => fb.generate(prompt, opts) : null,
+    );
+    c.cost.record('pick-categories', usedModel, await readUsage(result), ms);
+
+    const picked: Array<{ path: string; reason: string }> = [];
+    const seen = new Set<number>();
+    let dropped = 0;
+    for (const pick of result.object?.picks ?? []) {
+      const i = pick.item - 1;
+      const option = options[i];
+      // An index outside the list is the one failure this format allows, and
+      // it is detectable: drop it rather than inventing a section of the shop.
+      if (!option || seen.has(i)) { dropped++; continue; }
+      seen.add(i);
+      picked.push({ path: option.path, reason: pick.reason });
+      if (picked.length >= MAX_PICKED_CATEGORIES) break;
+    }
+
+    c.profile = result.object?.profile ?? null;
+    c.pickedCategories = picked;
+
+    if (picked.length) {
+      const built = poolFor(c);
+      c.poolRoot = built.root;
+      c.pool = shaped(c, built.products);
+      c.counts.categoryPool = built.products.length;
+      c.counts.shortlist = c.pool.length;
+    }
+
+    c.events.emit('categories.picked', {
+      offered: options.length,
+      profile: c.profile,
+      picked: picked.map((x) => x.path),
+      droppedBadIndex: dropped,
+      pool: c.pool.length,
+      includesOwnSection: picked.some((x) => x.path === seedKey),
+    });
+    return inputData;
+  },
+});
+
+// ------------------------------------------------------ 9. classify tier
 const classifyTier = createStep({
   id: 'classify-tier',
   inputSchema: stateSchema,
@@ -458,10 +792,20 @@ const classifyTier = createStep({
       return pass(inputData, 'none');
     }
 
-    const category = c.seed.category!;
+    /**
+     * Tier is a judgement WITHIN a kind of product, so it is asked against the
+     * node that holds one kind. Suggesting, that is the parent node, and only
+     * bands 0 and 1 are put to it: asking whether a mouse is premium next to a
+     * laptop would produce a number that means nothing and then filter on it.
+     * Band 2 reaches the recommender untiered, on purpose.
+     */
+    const category = c.mode === 'suggest' ? c.nearRoot : c.seed.category!;
     // The seed needs a tier too, and it is typically out of stock, so it is
     // added explicitly rather than coming from the in-stock pool.
-    const subjects = [c.seed, ...c.pool.filter((p) => p.sku !== c.seed.sku)];
+    const subjects = [
+      c.seed,
+      ...c.pool.filter((p) => p.sku !== c.seed.sku && band(c, p) <= 1),
+    ];
     const todo = c.options.forceTier ? subjects : subjects.filter((p) => c.store.needsTier(p));
     const cached = subjects.length - todo.length;
     c.counts.tierCached = cached;
@@ -537,11 +881,15 @@ async function askRecommender(
   const stage = widened ? 'recommend-pass2' : 'recommend-pass1';
   const recFallback = recommenderFallback;
   const prompt = recommendPrompt({
-    categoryPath: c.seed.category!,
+    categoryPath: c.poolRoot || c.seed.category!,
     seed: c.seed,
     candidates,
     widened,
     seedTier: c.seed.tier ?? 0,
+    mode: c.mode,
+    cluster: c.cluster ? { label: CLUSTER_LABEL[c.cluster], note: CLUSTER_NOTE[c.cluster] } : null,
+    profile: c.profile,
+    sections: c.pickedCategories.map((x) => x.path),
   });
   const opts = { structuredOutput: { schema: pickSchema } };
   const { result, model: usedModel, ms } = await callModel(
@@ -567,6 +915,24 @@ async function askRecommender(
   return { picks, noneReason: result.object?.noneReason ?? null, dropped };
 }
 
+/**
+ * The candidate list the recommender actually sees.
+ *
+ * Substituting, it is the tier-matched products and nothing else. Suggesting,
+ * a fixed share of the list is reserved for band 2 — the rest of the
+ * department — because that is the whole reason the pool was widened. Without
+ * the reservation the tier-matched products fill the list and the suggestion
+ * collapses back into "more of the same thing", which is what it was before.
+ */
+function withAdjacent(c: RunContext, tiered: TaggedProduct[]): TaggedProduct[] {
+  const adjacent = c.mode === 'suggest' ? c.pool.filter((p) => band(c, p) === 2) : [];
+  const reserved = adjacent.length ? Math.min(ADJACENT_CANDIDATES, adjacent.length) : 0;
+  return [
+    ...spreadSample(tiered, CANDIDATE_CEILING - reserved),
+    ...spreadSample(adjacent, reserved),
+  ];
+}
+
 const recommendSameTier = createStep({
   id: 'recommend-same-tier',
   inputSchema: stateSchema,
@@ -576,9 +942,9 @@ const recommendSameTier = createStep({
     if (inputData.done) return inputData;
 
     const sameTier = c.pool
-      .filter((p) => p.sku !== c.seed.sku && p.tier === c.seed.tier)
+      .filter((p) => p.sku !== c.seed.sku && band(c, p) <= 1 && p.tier === c.seed.tier)
       .sort((a, b) => b.price - a.price);
-    const candidates = spreadSample(sameTier, CANDIDATE_CEILING);
+    const candidates = withAdjacent(c, sameTier);
     c.counts.candidatesPass1 = candidates.length;
 
     if (!candidates.length) {
@@ -613,11 +979,12 @@ const recommendWidened = createStep({
       .filter(
         (p) =>
           p.sku !== c.seed.sku &&
+          band(c, p) <= 1 &&
           p.tier !== null && p.tier !== undefined &&
           Math.abs(p.tier - seedTier) <= 1,
       )
       .sort((a, b) => b.price - a.price);
-    const candidates = spreadSample(near, CANDIDATE_CEILING);
+    const candidates = withAdjacent(c, near);
     c.counts.candidatesPass2 = candidates.length;
 
     if (!candidates.length) {
@@ -656,6 +1023,12 @@ const pickSummarySchema = z.object({
 const resultSchema = z.object({
   runId: z.string(),
   decision: z.string(),
+  mode: z.string(),
+  cluster: z.object({
+    id: z.string(), label: z.string(), by: z.string(),
+  }).nullable(),
+  profile: z.string().nullable(),
+  categories: z.array(z.object({ path: z.string(), reason: z.string() })),
   seed: z.object({
     sku: z.string(), name: z.string(), price: z.number(), stockBand: z.string(),
     category: z.string().nullable(), brand: z.string().nullable(),
@@ -695,6 +1068,8 @@ const finish = createStep({
 
     c.events.emit('run.completed', {
       decision,
+      mode: c.mode,
+      cluster: c.cluster,
       picks: c.picks.length,
       calls: cost.calls,
       callsAvoided: cost.callsAvoidedByCache,
@@ -707,6 +1082,12 @@ const finish = createStep({
     const result = {
       runId: inputData.runId,
       decision,
+      mode: c.mode,
+      cluster: c.cluster
+        ? { id: c.cluster, label: CLUSTER_LABEL[c.cluster], by: c.clusterBy ?? 'brand' }
+        : null,
+      profile: c.profile,
+      categories: c.pickedCategories,
       seed: {
         sku: c.seed.sku, name: c.seed.name, price: c.seed.price,
         stockBand: c.seed.stockBand, category: c.seed.category, brand: c.seed.brand,
@@ -754,19 +1135,29 @@ const finish = createStep({
  *
  * The order is deliberate and each step is allowed to end the run:
  *
- *   1  load the seed
- *   2  validate it — we are about to search by its category, so it had better
- *      be right
- *   3  in stock? then it is its own answer, and nothing was spent
- *   4  build the in-stock pool for its category — reading the store, free
- *   5  same product in another variant, in stock? deterministic, free, and
- *      better than anything a model would pick. Deliberately BEFORE any paid
- *      step, so the free answer never pays for cleaning it does not need
- *   6  clean the category, because tier inherits category errors
- *   7  classify premium tier for the seed and the in-stock pool, once per
- *      category, persisted so the next run in that category pays nothing
- *   8  ask for recommendations among products at the same tier
- *   9  only if that came back empty, widen to one tier either side
+ *    1  load the seed
+ *    2  validate it — we are about to search by its category, so it had better
+ *       be right
+ *    3  stock decides the MODE, not the answer. Out of stock is substitution;
+ *       in stock is suggestion, and the steps below read differently for each
+ *    4  build the pool — the leaf when substituting, the parent node and
+ *       everything under it when suggesting. Reading the store, free
+ *    5  suggesting: a real discount above the threshold on the seed or a
+ *       direct variant ends it here, free. 3.5% of in-stock seeds land here
+ *    6  substituting: the same product in another variant, in stock —
+ *       deterministic, free, and better than anything a model would pick.
+ *       Deliberately BEFORE any paid step
+ *    7  suggesting: which of the four customers this seed implies. Free when
+ *       the brand settles it
+ *    8  suggesting: ask which SECTIONS of the shop to draw from, against the
+ *       70 that have stock. One call, and it replaces a set of quotas I had
+ *       guessed, so where to look is a judgement about this customer
+ *    9  clean the category, because tier inherits category errors
+ *   10  classify premium tier for the seed and the products of its own kind —
+ *       never across sections, where the number would mean nothing
+ *   11  ask for recommendations among products at the same tier, with a share
+ *       of the list reserved for the other sections
+ *   12  only if that came back empty, widen to one tier either side
  *
  * Steps short-circuit on `done` rather than branching, so the chain stays one
  * readable sequence and every stage still emits its event.
@@ -781,7 +1172,10 @@ export const recommendWorkflow = createWorkflow({
   .then(validateSeed)
   .then(checkStock)
   .then(buildPool)
+  .then(promoShortcutStep)
   .then(exactVariant)
+  .then(classifyCluster)
+  .then(pickCategories)
   .then(validatePool)
   .then(classifyTier)
   .then(recommendSameTier)

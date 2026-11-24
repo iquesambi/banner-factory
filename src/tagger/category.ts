@@ -20,6 +20,25 @@ export interface CategoryGuess {
   margin: number;
   /** Ranked alternatives, handed to the LLM validator as a closed choice set. */
   candidates: string[];
+  /**
+   * A whole-word hit, with nothing guessed about how Danish glues words.
+   *
+   * A perfect fit is a curated synonym matched on a complete word, or the
+   * category's full slug appearing as a phrase in the name. Those are the
+   * matches where the name literally says what the thing is.
+   *
+   * A perfect fit is a whole-word match that nothing else ties with: a
+   * curated synonym on a complete word, the category's full slug as a phrase,
+   * or one of its words appearing as written.
+   *
+   * Two things fall short. A `compound` match split a glued word and hoped the
+   * tail was the head noun, which is right often and wrong in ways no score
+   * can see — "trommeleenhed" ends in "enhed", and a drum unit is not a unit
+   * of anything. And any match that TIES with another category is not perfect
+   * however literal it was: two categories scored the same on the same
+   * evidence, so the name does not say which. Both are worth a confirmation.
+   */
+  perfect: boolean;
 }
 
 /**
@@ -162,7 +181,7 @@ export class CategoryTagger {
    * priority, which is why accessories are listed before the devices they are
    * named after.
    */
-  private synonymFor(ws: string[]): { path: string; term: string } | null {
+  private synonymFor(ws: string[]): { path: string; term: string; via: 'word' | 'suffix' } | null {
     const wordSet = new Set(ws);
     const endsWithAny = (suffixes: string[]) =>
       suffixes.find((suf) => ws.some((w) => w === suf || (w.length > suf.length && w.endsWith(suf))));
@@ -176,7 +195,7 @@ export class CategoryTagger {
       if (entry.requireAny?.length && !entry.requireAny.some((w) => wordSet.has(w))) continue;
       if (entry.excludeAny?.some((w) => wordSet.has(w))) continue;
 
-      return { path: entry.path, term };
+      return { path: entry.path, term, via: hitWord ? 'word' : 'suffix' };
     }
     return null;
   }
@@ -190,7 +209,9 @@ export class CategoryTagger {
     const padded = ` ${ws.join(' ')} `;
     const maxDf = this.docCount * MAX_DF_RATIO;
 
-    const scored: Array<{ path: string; score: number; kind: MatchKind; term: string }> = [];
+    const scored: Array<{
+      path: string; score: number; kind: MatchKind; term: string; whole: boolean;
+    }> = [];
 
     const synonym = this.synonymFor(ws);
     if (synonym) {
@@ -199,6 +220,7 @@ export class CategoryTagger {
         score: KIND_WEIGHT.synonym,
         kind: 'synonym',
         term: synonym.term,
+        whole: synonym.via === 'word',
       });
     }
 
@@ -209,7 +231,9 @@ export class CategoryTagger {
       const ambiguity = Math.sqrt(t.paths.length);
       const score = (t.idf * KIND_WEIGHT[kind] * positionBonus) / ambiguity;
       for (const path of this.rankPaths(t)) {
-        scored.push({ path, score, kind, term: t.term });
+        // `compound` is the only match that guesses at how Danish glues words
+        // together; `exact` and `phrase` both found the word as written.
+        scored.push({ path, score, kind, term: t.term, whole: kind !== 'compound' });
       }
     };
 
@@ -249,7 +273,39 @@ export class CategoryTagger {
       term: best.term,
       margin: Number((best.score - (runnerUp?.score ?? 0)).toFixed(4)),
       candidates,
+      /**
+       * Whole word AND unopposed. A tie means two categories scored the same
+       * on the same evidence, which is not a perfect fit however literal the
+       * match was — the name simply does not say which of the two it is.
+       */
+      perfect: best.whole && best.score - (runnerUp?.score ?? 0) > 0,
     };
+  }
+
+  /**
+   * Matching a PRODUCT TYPE, as opposed to a product name.
+   *
+   * `tag()` reads a shop listing: a long string with a brand, a model code and
+   * the type buried in it. This reads two or three deliberate words — what a
+   * model answered when asked what the thing is — and the two need different
+   * tolerance.
+   *
+   * The taxonomy names its leaves in the plural ("hojttalere", 399 of 723 end
+   * that way) while the natural answer to "what is this" is singular. Measured
+   * on the obvious Danish type words, that mismatch alone lost "hojttaler",
+   * and no amount of prompting fixes it reliably: told to answer in the
+   * plural, a model will still sometimes answer in the singular. So the
+   * tolerance belongs here, where it is deterministic.
+   *
+   * Nothing is invented: every variant is still looked up in the same tree,
+   * and a word the tree has no term for stays unmatched.
+   */
+  matchType(phrase: string): CategoryGuess | null {
+    for (const variant of typeVariants(phrase)) {
+      const guess = this.tag(variant);
+      if (guess) return guess;
+    }
+    return null;
   }
 
   /** Prefer the node the term names exactly, then the most specific one. */
@@ -275,6 +331,50 @@ export class CategoryTagger {
       droppedAsTooCommon: dropped.map((t) => ({ term: t.term, df: t.df })),
     };
   }
+}
+
+/**
+ * The forms of a Danish product type worth trying against the taxonomy.
+ *
+ * Both directions, because the answer and the slug can each be either way
+ * round: "hojttaler" has to reach "hojttalere", and "plakater" has to reach
+ * "plakat". The head word on its own is tried last, so "traadloes mus" still
+ * finds mice after the full phrase fails.
+ */
+export function typeVariants(phrase: string): string[] {
+  const base = fold(phrase).trim();
+  if (!base) return [];
+
+  const words = base.split(' ');
+  const last = words.at(-1)!;
+  const swap = (w: string) => [...words.slice(0, -1), w].join(' ');
+  const out = new Set<string>([base]);
+
+  for (const suffix of ['er', 'e', 'r']) out.add(swap(last + suffix));
+  for (const suffix of ['erne', 'ene', 'er', 'e', 'r']) {
+    if (last.length > suffix.length + 2 && last.endsWith(suffix)) {
+      out.add(swap(last.slice(0, -suffix.length)));
+    }
+  }
+  if (words.length > 1) {
+    out.add(last);
+    for (const suffix of ['er', 'e']) out.add(last + suffix);
+  }
+
+  /**
+   * Finally the tails of the head word, longest first. Danish compounds are
+   * head-final, so the type of "kompaktovn" is "ovn" — a category that exists,
+   * and which `tag()` cannot reach because its compound rule refuses tails
+   * under four characters. That floor is right for product names, where a
+   * short tail matches half the catalogue by accident; here the input is two
+   * deliberate words answering "what is this", so the tail is the answer.
+   *
+   * Longest first, so a compound that names a real category keeps it:
+   * "mikroovn" matches as itself before it is ever cut down to "ovn".
+   */
+  for (let cut = 1; cut <= last.length - 3; cut++) out.add(swap(last.slice(cut)));
+
+  return [...out];
 }
 
 export function brandFromName(name: string, taxonomy: Taxonomy): string | null {

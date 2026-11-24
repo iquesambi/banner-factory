@@ -39,6 +39,40 @@ function save(job: Job): void {
   }
 }
 
+/**
+ * Fills in fields added after a job was written.
+ *
+ * Jobs are JSON on disk and the shape has grown — reuse, money, photographs.
+ * A file written before a field existed has it as `undefined`, and the screen
+ * that reads `job.reuseRejected.length` then takes the whole page down, which
+ * is exactly what happened. Everything a screen touches gets a default here,
+ * on the way in, so no reader has to guess which version wrote the file.
+ */
+function normalise(raw: Partial<Job>): Job {
+  const cost = raw.cost ?? { calls: 0, tokens: 0, avoided: 0, usd: null, rateReadAt: null, byStep: [] };
+  return {
+    ...(raw as Job),
+    cost: {
+      calls: cost.calls ?? 0,
+      tokens: cost.tokens ?? 0,
+      avoided: cost.avoided ?? 0,
+      usd: cost.usd ?? null,
+      rateReadAt: cost.rateReadAt ?? null,
+      byStep: (cost.byStep ?? []).map((b) => ({ ...b, usd: b.usd ?? null })),
+    },
+    seed: { ...(raw.seed as Job['seed']), image: raw.seed?.image ?? null },
+    pick: raw.pick ? { ...raw.pick, image: raw.pick.image ?? null } : null,
+    events: raw.events ?? [],
+    headlineLines: raw.headlineLines ?? [],
+    audience: raw.audience ?? null,
+    reuse: raw.reuse ?? null,
+    reuseRejected: raw.reuseRejected ?? [],
+    reuseOptOut: raw.reuseOptOut ?? false,
+    rating: raw.rating ?? null,
+    ratingReason: raw.ratingReason ?? null,
+  };
+}
+
 function loadAll(): void {
   if (loaded) return;
   loaded = true;
@@ -46,7 +80,7 @@ function loadAll(): void {
   for (const f of readdirSync(JOB_DIR)) {
     if (!f.endsWith('.json')) continue;
     try {
-      const job = JSON.parse(readFileSync(`${JOB_DIR}/${f}`, 'utf8')) as Job;
+      const job = normalise(JSON.parse(readFileSync(`${JOB_DIR}/${f}`, 'utf8')) as Partial<Job>);
       /**
        * A job that was mid-flight when the process died cannot be resumed:
        * nothing is listening for its events any more. Marking it failed is
@@ -141,6 +175,7 @@ export function enqueue(sku: string, language: Language, reuseOptOut = false): J
     id: randomUUID().slice(0, 8),
     createdAt: new Date().toISOString(),
     stage: 'queued',
+    audience: null,
     language,
     seed: {
       sku: product.sku,
@@ -194,6 +229,11 @@ function reuseDepth(): number {
   return Number.isFinite(n) && n > 0 ? Math.floor(n) : 2;
 }
 
+/** The other half of the saving, and also a rule rather than a constant. */
+function seedReuseAllowed(): boolean {
+  return loadRules().tieBreak.find((t) => t.id === 'reuseSeed')?.enabled ?? false;
+}
+
 /**
  * Takes the banner from an earlier job and makes it this job's answer.
  *
@@ -232,7 +272,7 @@ async function run(job: Job): Promise<void> {
      * seed, in this language, that is still true today? That hit skips
      * choosing, writing and drawing, so the run costs nothing at all.
      */
-    if (!job.reuseOptOut) {
+    if (!job.reuseOptOut && seedReuseAllowed()) {
       const all = listJobs();
       const hit = forSeed(all, job.seed.sku, job.language, job.id);
       if (hit) {
@@ -264,6 +304,22 @@ async function run(job: Job): Promise<void> {
       tokens: rec.cost.totalTokens,
       usd: rec.cost.usd,
     });
+
+    /**
+     * Keep the reading that produced the pick, not just the pick. With the
+     * seed in stock the banner is a suggestion, and a suggestion without its
+     * reasoning is unreviewable — the person rating it has to be able to see
+     * who it was aimed at and which parts of the shop were searched.
+     */
+    if (rec.mode === 'suggest') {
+      job.audience = {
+        mode: 'suggest',
+        cluster: rec.cluster,
+        profile: rec.profile,
+        sections: rec.categories,
+      };
+      save(job);
+    }
 
     const pick = rec.picks[0];
     if (!pick) {

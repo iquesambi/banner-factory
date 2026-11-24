@@ -524,6 +524,74 @@ still holds", com link para o original.
 Quando um banner existe e **não** pode ser reaproveitado, o card lista o
 motivo — preço mudou, esgotou, a economia acabou. Silêncio ali pareceria bug.
 
+## Quando a semente TEM estoque
+
+Até aqui o fluxo só sabia substituir. Semente em estoque devolvia ela mesma e
+acabava. Mas não há nada a substituir — o banner vira uma **sugestão**, e
+sugestão é outro problema.
+
+### Primeiro o determinístico
+
+Se o produto, ou uma variante direta dele, está com desconto acima de **30%**
+(`PROMO_THRESHOLD_PCT`, para ajustar depois), o banner é ele. Não há o que
+julgar: corte de preço no que a pessoa já estava olhando é a oferta.
+
+Só conta desconto em que o feed concorda consigo mesmo — os 56 produtos cujo
+rótulo contradiz o campo de economia, e os 3 com preço anterior menor que o
+atual, ficam de fora. Um banner construído em cima deles imprimiria uma
+economia falsa.
+
+Medido nas **11.003 sementes em estoque** do catálogo:
+
+| | |
+|---|---|
+| resolvem pelo próprio desconto | 336 |
+| resolvem por variante em promoção | 45 |
+| **nunca chamam modelo nenhum** | **3,5%** |
+
+O caso da variante é o mais bonito: quem olhou o SSD PNY de 250 GB recebe o
+de 500 GB com 31,6% off. Mesma linha, mais produto, menos dinheiro.
+
+### Depois, a vizinhança na árvore
+
+Com a semente em estoque, procurar na mesma folha devolve produtos quase
+idênticos ao que a pessoa já viu. O pool passa a ser o **nó pai e tudo
+abaixo** — irmãos e sobrinhos. Uma geladeira passa a ter freezers e adegas
+por perto.
+
+Com um teto medido: categoria de dois segmentos tem um **departamento** como
+pai, e alargar ali significa 2.471 produtos, o andar inteiro de
+eletrodomésticos. Nesse caso o pool fica na folha. É o mesmo erro da raiz de
+departamento que já me custou caro uma vez.
+
+| semente | folha | vizinhança |
+|---|---|---|
+| geladeira Samsung | 331 | 691 |
+| TV TCL | 545 | 665 |
+| adega Temptech | 125 | 125 (travado: pai é departamento) |
+
+### Os quatro clusters
+
+Classificar a pessoa pelo produto que ela olhou. Os três primeiros são seus;
+o quarto é meu, e os quatro existem no catálogo com volume real:
+
+| cluster | o que compra | marcas, com contagem medida |
+|---|---|---|
+| **tech** | capacidade e especificação | Asus 213, Corsair 148, SteelSeries 105, Razer 79 |
+| **design** | o objeto e o nome nele | Smeg 542, Miele 415, Apple 156, Dyson 50 |
+| **nordic** | os nomes nórdicos estabelecidos | Electrolux 673, AEG 105, Grohe 84, Epoq 67 |
+| **value** | função e preço | Sandstrøm 204, Logik 119, Goji 50, Essentials 24 |
+
+**Por que o quarto é "value".** As referências de design do briefing nomeiam
+quatro segmentos de cliente, e os três seus cobrem os três primeiros. Falta
+quem compra por função e preço — o primeiro apartamento, a reposição que só
+precisa funcionar. O catálogo sustenta isso sem invenção: as marcas próprias
+da Elkjøp somam 397 produtos, e ninguém as compra pelo emblema.
+
+Uma economia que veio de graça: **10,6% das sementes têm o cluster decidido
+pela marca**, sem modelo, e a distribuição entre os quatro é equilibrada
+(454 / 238 / 243 / 228). Onde a marca decide, o agente não roda.
+
 ## Onde está hoje
 
 | | |
@@ -660,6 +728,11 @@ O resto do feed ele carrega como está.
 | 42 | Só o que o banner mostra precisa continuar verdade | desconto novo em produto que não anunciava desconto não torna o banner falso |
 | 43 | A profundidade do reuso vem do conjunto de regras | é a primeira regra de negócio que governa o fluxo de verdade |
 | 44 | Reuso é o padrão, com opt-out | o caro é gerar; quem quer novo pede |
+| 45 | Semente em estoque é sugestão, não substituição | não há o que substituir, então a mesma folha só devolve o que a pessoa já viu |
+| 46 | Desconto acima de 30% decide sozinho | corte de preço no que a pessoa olhava não precisa de julgamento |
+| 47 | A vizinhança sobe ao pai, nunca ao departamento | alargar num pai de um segmento dá 2.471 produtos |
+| 48 | Quarto cluster é "value", pelas marcas próprias | 397 produtos de Sandstrøm, Logik, Goji e Essentials sustentam o grupo |
+| 49 | Marca conhecida decide o cluster sem modelo | 10,6% das sementes, equilibradas entre os quatro |
 
 ## O que ainda falta
 

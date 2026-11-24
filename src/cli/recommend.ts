@@ -11,6 +11,7 @@ if (!skus.length) {
   console.error(`uso: npm run recommend -- <sku> [sku...] [opcoes]
 
   --quiet              nao imprime a timeline ao vivo
+  --free               so os caminhos gratuitos: nao valida nada, nao chama modelo
   --no-validate-seed   pula a validacao de categoria da semente
   --no-validate-pool   pula a limpeza da categoria
   --retier             reclassifica faixa mesmo onde ja existe
@@ -40,8 +41,8 @@ async function run(sku: string): Promise<RecommendResult> {
   const out = await r.start({
     inputData: {
       sku,
-      validateSeed: !has('no-validate-seed'),
-      validatePool: !has('no-validate-pool'),
+      validateSeed: !has('no-validate-seed') && !has('free'),
+      validatePool: !has('no-validate-pool') && !has('free'),
       forceTier: has('retier'),
       verbose,
       ...(flag('webhook') ? { webhookUrl: flag('webhook') } : {}),
@@ -80,16 +81,40 @@ for (const sku of skus) {
   console.log(`  ${dkk(s.price)}  estoque ${BAND(s.stockBand)}  faixa ${s.tier ?? '—'}  status ${s.status}`);
   console.log(`  ${s.category ?? 'sem categoria'}  |  marca ${s.brand ?? '—'}`);
 
+  const modo = result.mode === 'suggest' ? 'SUGESTAO (semente em estoque)' : 'SUBSTITUICAO (semente sem estoque)';
+  console.log(`\n  MODO: ${modo}`);
+  if (result.cluster) {
+    console.log(`  CLUSTER: ${result.cluster.label} (${result.cluster.id}) — decidido por ${result.cluster.by === 'brand' ? 'marca, sem modelo' : 'modelo'}`);
+  }
+
+  if (result.profile) console.log(`  PERFIL: ${result.profile}`);
+  if (result.categories.length) {
+    console.log(`\n  SECOES ESCOLHIDAS (${result.categories.length})`);
+    for (const [i, cat] of result.categories.entries()) {
+      console.log(`   ${i + 1}. ${cat.path}`);
+      console.log(`      ${cat.reason}`);
+    }
+  }
+
   console.log(`\n  DECISAO: ${result.decision}`);
   if (result.noneReason) console.log(`  motivo da recusa: ${result.noneReason}`);
 
   if (result.picks.length) {
     console.log(`\n  RECOMENDADOS (${result.picks.length})`);
+    console.log(`       ${'preco'.padStart(12)}  estoque faixa`);
     for (const p of result.picks) {
-      const delta = s.price ? `${(((p.price - s.price) / s.price) * 100).toFixed(0)}%` : '—';
+      /**
+       * What the product is, and what it costs.
+       *
+       * This column once also carried the price relative to the seed and the
+       * discount. Neither decides anything here — what to do with a promotion
+       * is a business rule applied later — and both framed the list as cheap
+       * or dear when the question is whether the product is right for this
+       * customer.
+       */
       console.log(
-        `   ${String(p.rank).padStart(2)}. ${dkk(p.price).padStart(12)} ${String(delta).padStart(5)}  ` +
-        `estoque ${BAND(p.stockBand).padEnd(4)} faixa ${p.tier ?? '—'}  ${p.name.slice(0, 54)}`,
+        `   ${String(p.rank).padStart(2)}. ${dkk(p.price).padStart(12)}  ` +
+        `${BAND(p.stockBand).padEnd(7)} ${p.tier ?? '—'}  ${p.name.slice(0, 60)}`,
       );
       console.log(`       ${p.reason}`);
     }

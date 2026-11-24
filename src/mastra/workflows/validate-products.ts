@@ -4,6 +4,7 @@ import { loadTaxonomy } from '../../taxonomy/index.js';
 import { TagStore } from '../../store/index.js';
 import type { TaggedProduct } from '../../types.js';
 import { categoryValidator, hasApiKey, VALIDATOR_MODEL } from '../agents/category-validator.js';
+import { categoryConfirmer, confirmPrompt, confirmSchema } from '../agents/category-enricher.js';
 import { RPM_LIMIT, RpmThrottle, retryPlanFor } from '../rpm.js';
 import { readUsage } from '../../cost/index.js';
 
@@ -305,7 +306,65 @@ const validate = createStep({
     };
 
     /**
-     * Three questions, each narrower than the last.
+     * 0. One yes-or-no for everything a rule already placed.
+     *
+     * These reach this point because the match was imperfect: a glued Danish
+     * word was split and the tail assumed to be the type, or two categories
+     * tied. The rule is usually right, so the cheapest useful question is
+     * whether to keep it — a boolean, not a choice among five paths. Only the
+     * products that come back "no" pay for the longer question below.
+     *
+     * This is also WHEN it is asked. A bulk pass would confirm 3,881 products
+     * whose categories mostly never come up; here the bill is paid by the
+     * runs that actually search those categories.
+     */
+    const placed = queue.filter((e) => e.product.category !== null);
+    const afterConfirm: Entry[] = queue.filter((e) => e.product.category === null);
+
+    for (let start = 0; start < placed.length; start += inputData.batchSize) {
+      const batch = placed.slice(start, start + inputData.batchSize);
+      const items = batch.map((e) => ({ name: e.product.name, proposed: e.product.category! }));
+      try {
+        await throttle.take();
+        requests++;
+        const result = await categoryConfirmer.generate(confirmPrompt(items), {
+          structuredOutput: { schema: confirmSchema },
+        });
+        const used = await readUsage(result);
+        inputTokens += used?.inputTokens ?? 0;
+        outputTokens += used?.outputTokens ?? 0;
+
+        const seen = new Set<number>();
+        for (const a of result.object?.answers ?? []) {
+          const i = a.item - 1;
+          const entry = batch[i];
+          // An index outside the batch is the one failure this format allows.
+          if (!entry || seen.has(i)) continue;
+          seen.add(i);
+          if (!a.belongs) { afterConfirm.push(entry); continue; }
+          const product = entry.product;
+          product.status = 'validated';
+          product.categoryDecidedBy = 'confirmed';
+          product.validatedAt = new Date().toISOString();
+          product.validatedBy = VALIDATOR_MODEL;
+          product.validationNote = 'A rule guessed it from a word ending and the model agreed.';
+          store.put(product);
+          outcomes.push({
+            sku: product.sku, name: product.name, before: product.category,
+            after: product.category, status: 'validated', confidence: 'high',
+            optionsOffered: 0, note: product.validationNote,
+          });
+        }
+        // Anything the batch did not answer for still deserves the long question.
+        batch.forEach((entry, i) => { if (!seen.has(i)) afterConfirm.push(entry); });
+      } catch {
+        // A failed confirmation is not a verdict: fall through to the choice.
+        afterConfirm.push(...batch);
+      }
+    }
+
+    /**
+     * Then three questions, each narrower than the last.
      *
      * The middle one used to be the end of the line, and that was the bug. A
      * product the tagger misfiled would be rejected in pass 1, answered with a
@@ -317,8 +376,8 @@ const validate = createStep({
      *
      * Now a department is only ever a step on the way to a leaf.
      */
-    const needsDepartment: Entry[] = [...queue.filter((e) => !e.options.length)];
-    const withCandidates = queue.filter((e) => e.options.length > 0);
+    const needsDepartment: Entry[] = [...afterConfirm.filter((e) => !e.options.length)];
+    const withCandidates = afterConfirm.filter((e) => e.options.length > 0);
 
     // 1. the tagger's own candidates, for products it actually placed.
     if (withCandidates.length) {

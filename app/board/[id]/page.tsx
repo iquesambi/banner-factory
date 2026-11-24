@@ -2,6 +2,7 @@
 
 import { use, useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Badge, Button, cn } from '@/components/ui/primitives';
 import { LANGUAGE_LABEL, kr, stockLabel, type Job } from '@/app/lib/types';
 import { BannerThumb } from '@/app/components/banner-thumb';
@@ -11,8 +12,11 @@ import { describe } from '@/app/lib/describe';
 
 export default function CardPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
+  const router = useRouter();
   const [job, setJob] = useState<Job | null>(null);
   const [missing, setMissing] = useState(false);
+  /** Other requests that ended on this same banner, by reuse. */
+  const [siblings, setSiblings] = useState<Job[]>([]);
 
   useEffect(() => {
     let live = true;
@@ -30,6 +34,26 @@ export default function CardPage({ params }: { params: Promise<{ id: string }> }
       clearInterval(timer);
     };
   }, [id]);
+
+  /**
+   * The same banner can be the answer to several seeds, because a later
+   * request reused it. Those are the other seeds, offered as a switch rather
+   * than as separate cards nobody asked for.
+   */
+  useEffect(() => {
+    if (!job?.png) return;
+    let live = true;
+    fetch('/api/jobs')
+      .then((r) => r.json())
+      .then((data: { jobs: Job[] }) => {
+        if (!live) return;
+        setSiblings(data.jobs.filter((j) => j.png === job.png && j.id !== job.id));
+      })
+      .catch(() => undefined);
+    return () => {
+      live = false;
+    };
+  }, [job?.png, job?.id]);
 
   if (missing) {
     return (
@@ -71,16 +95,26 @@ export default function CardPage({ params }: { params: Promise<{ id: string }> }
 
             <div className="flex flex-wrap items-stretch gap-3.5">
               <ProductBox
-                label="THE SEED"
+                label={siblings.length ? `THE SEED · 1 of ${siblings.length + 1}` : 'THE SEED'}
                 name={job.seed.name}
                 sku={job.seed.sku}
                 price={job.seed.price}
                 stock={job.seed.stockBand}
                 image={job.seed.image}
                 tone="muted"
+                others={siblings}
+                onPick={(nextId) => router.push(`/board/${nextId}`)}
+                currentId={job.id}
               />
               <div className="flex shrink-0 items-center justify-center">
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-label="replaced by" role="img">
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 20 20"
+                  fill="none"
+                  aria-label={job.audience?.mode === 'suggest' ? 'suggests' : 'replaced by'}
+                  role="img"
+                >
                   <path d="M3 10h13M11.5 5.5L17 10l-5.5 4.5" stroke="#94a3b8" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </div>
@@ -201,18 +235,64 @@ export default function CardPage({ params }: { params: Promise<{ id: string }> }
                 )}
               </ol>
 
+              {job.audience && (
+                <>
+                  <h2 className="mb-2.5 text-sm font-semibold">Who this is for</h2>
+                  <div className="mb-[18px] overflow-hidden rounded-[10px] border">
+                    <div className="border-b bg-secondary/40 px-4 py-3">
+                      {job.audience.cluster && (
+                        <div className="mb-1.5 flex flex-wrap items-center gap-2">
+                          <Badge tone="navy">{job.audience.cluster.label}</Badge>
+                          <span className="text-[11.5px] text-muted-foreground">
+                            {job.audience.cluster.by === 'brand'
+                              ? 'settled by the brand, no model call'
+                              : 'read by the model'}
+                          </span>
+                        </div>
+                      )}
+                      {job.audience.profile ? (
+                        <p className="text-[13px] leading-relaxed text-slate-700">
+                          &ldquo;{job.audience.profile}&rdquo;
+                        </p>
+                      ) : (
+                        <p className="text-[12.5px] text-muted-foreground">
+                          The seed was in stock, so the banner is a suggestion rather than a
+                          replacement.
+                        </p>
+                      )}
+                    </div>
+
+                    {job.audience.sections.length > 0 && (
+                      <div className="px-4 py-3">
+                        <div className="mb-2 text-[11.5px] font-semibold uppercase tracking-wide text-muted-foreground">
+                          Sections searched, in the order chosen
+                        </div>
+                        <ol className="space-y-2">
+                          {job.audience.sections.map((sec, i) => (
+                            <li key={sec.path} className="flex gap-2.5">
+                              <span className="tnum mt-[1px] text-[12px] text-muted-foreground">{i + 1}</span>
+                              <div className="min-w-0">
+                                <div className="truncate text-[12.5px] font-medium">{sec.path}</div>
+                                <div className="text-[12.5px] leading-snug text-muted-foreground">
+                                  {sec.reason}
+                                </div>
+                              </div>
+                            </li>
+                          ))}
+                        </ol>
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
+
               {job.pick && (
                 <>
                   <h2 className="mb-2.5 text-sm font-semibold">Why this product</h2>
                   <div className="rounded-[10px] border px-4 py-3.5">
                     <div className="mb-1.5 flex flex-wrap items-center gap-2">
                       <span className="text-[13px] font-medium">{job.pick.name}</span>
-                      <span className="text-[12.5px] text-muted-foreground">
-                        {kr(job.pick.price)}
-                        {job.seed.price > 0 && (
-                          <> · {Math.round(((job.pick.price - job.seed.price) / job.seed.price) * 100)}% against the seed</>
-                        )}
-                      </span>
+                      <span className="text-[12.5px] text-muted-foreground">{kr(job.pick.price)}</span>
                     </div>
                     <p className="text-[13px] leading-relaxed text-slate-700">“{job.pick.reason}”</p>
                   </div>
@@ -296,6 +376,9 @@ function ProductBox({
   stock,
   image,
   tone,
+  others = [],
+  onPick,
+  currentId,
 }: {
   label: string;
   name: string;
@@ -304,6 +387,10 @@ function ProductBox({
   stock: string;
   image: string | null;
   tone: 'muted' | 'green';
+  /** Other jobs that produced this same banner, from a different seed. */
+  others?: Job[];
+  onPick?: (jobId: string) => void;
+  currentId?: string;
 }) {
   return (
     <div
@@ -317,7 +404,28 @@ function ProductBox({
         <div className={cn('text-[10.5px] font-bold tracking-wider', tone === 'muted' ? 'text-muted-foreground' : 'text-lime-700')}>
           {label}
         </div>
-        <div className="mt-0.5 text-[13px] font-medium leading-tight">{name}</div>
+        {others.length > 0 && onPick && currentId ? (
+          <>
+            <label className="sr-only" htmlFor="seed-switch">
+              Which seed to show
+            </label>
+            <select
+              id="seed-switch"
+              value={currentId}
+              onChange={(e) => onPick(e.target.value)}
+              className="mt-0.5 w-full max-w-full rounded border bg-background px-1.5 py-1 text-[13px] font-medium"
+            >
+              <option value={currentId}>{name}</option>
+              {others.map((o) => (
+                <option key={o.id} value={o.id}>
+                  {o.seed.name}
+                </option>
+              ))}
+            </select>
+          </>
+        ) : (
+          <div className="mt-0.5 text-[13px] font-medium leading-tight">{name}</div>
+        )}
         <div className="mt-0.5 text-[11.5px] text-muted-foreground">
           {sku} · {kr(price)}
           {stock !== '' && <> · <span className="text-orange-700">{stockLabel(stock)}</span></>}

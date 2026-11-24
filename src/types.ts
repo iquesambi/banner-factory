@@ -65,6 +65,23 @@ export interface TaggedProduct {
   categoryMargin: number | null;
   categoryMethod: 'synonym' | 'phrase' | 'exact' | 'compound' | 'llm' | null;
   categoryCandidates: string[];
+  /**
+   * How the category was settled, as opposed to which rule matched: a rule can
+   * fire and still be overruled by the model, and a product with no rule at all
+   * can be asked about directly.
+   */
+  categoryDecidedBy: 'rule' | 'confirmed' | 'corrected' | 'asked' | null;
+  /**
+   * The rule matched a whole word and nothing tied with it.
+   *
+   * Stored rather than recomputed because it decides whether this product is
+   * ever worth a model call: a perfect fit is accepted and never asked about,
+   * anything else gets one yes-or-no — but only when its category actually
+   * comes up in a run, not in a bulk pass over the whole shop.
+   */
+  categoryPerfect: boolean | null;
+  /** The model's own words, kept before they were matched back to the tree. */
+  categoryAnswer: string | null;
 
   // --- premium tier, filled lazily when the category is first touched
   tier: Tier | null;

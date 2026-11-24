@@ -61,6 +61,18 @@ export interface Job {
   error: string | null;
   rating: 'up' | 'down' | null;
   ratingReason: string | null;
+  /**
+   * How the product on the banner was reached, when the seed was in stock and
+   * the run had to suggest rather than substitute. Null for a substitution,
+   * where there is no customer to read: the job is to replace a known thing.
+   */
+  audience: {
+    mode: 'substitute' | 'suggest';
+    cluster: { id: string; label: string; by: string } | null;
+    /** The picker's one-sentence reading of who this is. */
+    profile: string | null;
+    sections: Array<{ path: string; reason: string }>;
+  } | null;
   /** Set when this job used a banner that already existed instead of making one. */
   reuse: {
     fromJobId: string;

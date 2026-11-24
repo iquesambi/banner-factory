@@ -78,6 +78,8 @@ export default function BoardPage() {
         <div className="flex items-start gap-3.5 overflow-x-auto pb-2">
           {BOARD_COLUMNS.map((col) => {
             const inColumn = jobs.filter((j) => inStage(j, col.stage));
+            /** Counted after grouping, so the number matches the cards shown. */
+            const groups = group(inColumn);
             return (
               <section
                 key={col.stage}
@@ -87,14 +89,19 @@ export default function BoardPage() {
                   <span className="h-[7px] w-[7px] rounded-full" style={{ background: col.dot }} />
                   <h2 className="text-[12.5px] font-semibold text-slate-700">{col.title}</h2>
                   <div className="flex-grow" />
-                  <span className="tnum text-[11.5px] text-muted-foreground">{inColumn.length}</span>
+                  <span className="tnum text-[11.5px] text-muted-foreground">{groups.length}</span>
                 </div>
 
                 <div className="flex flex-col gap-2 px-2.5 pb-3">
-                  {inColumn.map((job) => (
-                    <JobCard key={job.id} job={job} onChange={(j) => setJobs((all) => all?.map((x) => (x.id === j.id ? j : x)) ?? null)} />
+                  {groups.map((g) => (
+                    <JobCard
+                      key={g.primary.id}
+                      job={g.primary}
+                      alsoFrom={g.alsoFrom}
+                      onChange={(j) => setJobs((all) => all?.map((x) => (x.id === j.id ? j : x)) ?? null)}
+                    />
                   ))}
-                  {inColumn.length === 0 && (
+                  {groups.length === 0 && (
                     <div className="rounded-[9px] border border-dashed px-2.5 py-3.5 text-center text-[11.5px] text-muted-foreground">
                       nothing here
                     </div>
@@ -110,14 +117,49 @@ export default function BoardPage() {
 }
 
 /**
+ * One card per banner, not per request.
+ *
+ * Asking for the same banner twice produces two jobs, and the second one
+ * reuses the first one's image. Showing both would be two cards of the same
+ * picture, and only one of them is the job that made it. They collapse into
+ * the card for the job that did the work, and the others become a line
+ * saying which seeds also landed here.
+ */
+interface Group {
+  primary: Job;
+  alsoFrom: Job[];
+}
+
+function group(jobs: Job[]): Group[] {
+  const byBanner = new Map<string, Job[]>();
+  for (const job of jobs) {
+    /** No image yet means nothing to share: it stands on its own. */
+    const key = job.png ?? `job:${job.id}`;
+    const list = byBanner.get(key);
+    if (list) list.push(job);
+    else byBanner.set(key, [job]);
+  }
+
+  return [...byBanner.values()].map((list) => {
+    const made = list.filter((j) => !j.reuse);
+    const sorted = [...list].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    const primary = made[0] ?? sorted[0]!;
+    return { primary, alsoFrom: list.filter((j) => j.id !== primary.id) };
+  });
+}
+
+/**
  * Money on the card, tokens only when there is no rate for the model.
  * A banner costs a fraction of a cent, so cents with two decimals is the
  * unit that still shows the difference between a cached run and a cold one.
  */
 function cents(cost: Job['cost']): string {
-  if (cost.usd === null) return `${cost.tokens.toLocaleString('en-GB')} tk`;
+  if (cost.usd === null) return cost.tokens ? `${cost.tokens.toLocaleString('en-GB')} tk` : 'free';
   const c = cost.usd * 100;
-  return c < 1 ? `${c.toFixed(2)}¢` : `$${cost.usd.toFixed(3)}`;
+  // Spelled out rather than the cent sign: in this UI's font that glyph reads
+  // as a struck-through letter instead of a currency mark. The banner card
+  // already says "cents", so the two views now agree.
+  return c < 1 ? `${c.toFixed(2)} cents` : `$${cost.usd.toFixed(3)}`;
 }
 
 /** A failed job stays in the column it died in, so the failure has a place. */
@@ -128,7 +170,15 @@ function inStage(job: Job, stage: Stage): boolean {
   return reached === stage;
 }
 
-function JobCard({ job, onChange }: { job: Job; onChange: (job: Job) => void }) {
+function JobCard({
+  job,
+  alsoFrom,
+  onChange,
+}: {
+  job: Job;
+  alsoFrom: Job[];
+  onChange: (job: Job) => void;
+}) {
   const failed = job.stage === 'failed';
   const running = ['choosing', 'writing', 'drawing'].includes(job.stage);
   const title = job.pick?.name ?? job.seed.name;
@@ -146,11 +196,25 @@ function JobCard({ job, onChange }: { job: Job; onChange: (job: Job) => void }) 
 
         <div className="px-2.5 pb-2.5 pt-2.5">
           <div className="text-[12.5px] font-medium leading-snug">{title}</div>
+          {/*
+            Who it was aimed at, on the card itself. The board is where a
+            person will eventually sit and rate these, and "is this a good
+            banner" is unanswerable without knowing who it was for.
+          */}
+          {job.audience?.cluster && (
+            <div className="mt-0.5 text-[11px] text-muted-foreground">
+              for the {job.audience.cluster.label.toLowerCase()}
+            </div>
+          )}
 
           <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
             <Badge>{LANGUAGE_LABEL[job.language]}</Badge>
             <span className="tnum text-[11px] text-muted-foreground">
-              {job.cost.calls ? `${job.cost.calls} calls · ${cents(job.cost)}` : 'not started'}
+              {job.reuse
+                ? 'reused · free'
+                : job.cost.calls
+                  ? `${job.cost.calls} calls · ${cents(job.cost)}`
+                  : 'not started'}
             </span>
             {running && <span className="text-[11px] text-elgi-navy">running…</span>}
             {failed && <Badge tone="amber">needs a look</Badge>}
@@ -159,6 +223,13 @@ function JobCard({ job, onChange }: { job: Job; onChange: (job: Job) => void }) 
 
           {failed && job.error && (
             <p className="mt-1.5 line-clamp-2 text-[11.5px] text-orange-800">{job.error}</p>
+          )}
+
+          {alsoFrom.length > 0 && (
+            <p className="mt-1.5 text-[11px] text-lime-700">
+              Also asked for from {alsoFrom.length} other {alsoFrom.length === 1 ? 'seed' : 'seeds'}, reused
+              both times
+            </p>
           )}
         </div>
       </Link>

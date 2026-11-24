@@ -70,7 +70,8 @@ export const DEFAULT_RULES: RuleSet = {
     { id: 'campaign', label: 'Prefer the live campaign', enabled: false, sentence: 'Products in the live campaign are marked; prefer them when they are an equally good substitute.' },
   ],
   tieBreak: [
-    { id: 'hasBanner', label: 'Already has a banner', enabled: true, value: '2' },
+    { id: 'reuseSeed', label: 'Reuse a banner made from the same seed', enabled: true },
+    { id: 'hasBanner', label: 'Reuse a banner from the offered list', enabled: true, value: '2' },
     { id: 'cheapest', label: 'Cheapest first', enabled: false },
     { id: 'deepestStock', label: 'Deepest stock first', enabled: false },
   ],

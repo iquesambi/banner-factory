@@ -48,10 +48,68 @@ export function describe(e: JobEvent): Described | null {
       return {
         title: 'Checking stock',
         detail: d.inStock
-          ? 'in stock — the banner is for the seed itself'
+          ? 'in stock — nothing to replace, so the banner becomes a suggestion'
           : 'out of stock, so a substitute is worth finding',
         ...FREE,
       };
+
+    case 'pool.built': {
+      const suggest = str(d.mode) === 'suggest';
+      const live = num(d.inStock) ?? 0;
+      const shortlist = num(d.shortlist) ?? 0;
+      return {
+        title: suggest ? 'Looking wider than the shelf' : 'Building the pool',
+        detail: suggest
+          ? `${live.toLocaleString('en-GB')} in stock under ${str(d.root) ?? ''} · shortlisted ${shortlist}`
+          : `${shortlist} products in the same category`,
+        ...FREE,
+      };
+    }
+
+    case 'promo.checked': {
+      const threshold = num(d.threshold) ?? 0;
+      if (!d.found) {
+        return {
+          title: 'Looking for a discount worth a banner',
+          detail: `nothing above ${threshold}% on this product or its variants`,
+          ...FREE,
+        };
+      }
+      return {
+        title: 'A discount decided it on its own',
+        detail: `${str(d.how) === 'seed' ? 'this product' : 'another variant'} is ${
+          num(d.discountPct) ?? 0
+        }% off — no model was asked`,
+        ...FREE,
+      };
+    }
+
+    case 'cluster.decided': {
+      if (d.skipped) return null;
+      const byBrand = str(d.by) === 'brand';
+      return {
+        title: 'Reading the customer',
+        detail: [
+          str(d.cluster),
+          byBrand ? `settled by the brand ${str(d.brand) ?? ''}`.trim() : str(d.reason),
+        ]
+          .filter(Boolean)
+          .join(' — '),
+        ...(byBrand ? FREE : paid(1)),
+      };
+    }
+
+    case 'categories.picked': {
+      if (d.skipped) return null;
+      const picked = Array.isArray(d.picked) ? d.picked.map(String) : [];
+      return {
+        title: 'Choosing which sections of the shop to draw from',
+        detail: picked.length
+          ? `${picked.length} of ${num(d.offered) ?? 0} · ${picked.join(', ')}`
+          : `none of the ${num(d.offered) ?? 0} sections was picked`,
+        ...paid(1),
+      };
+    }
 
     case 'variant.matched':
       return {
@@ -92,7 +150,7 @@ export function describe(e: JobEvent): Described | null {
       const none = str(d.noneReason);
       const widened = e.stage === 'recommend.pass2';
       return {
-        title: widened ? 'Opening up to the neighbouring tier' : 'Choosing within the same tier',
+        title: widened ? 'Opening up to the neighbouring tier' : 'Choosing among the candidates',
         detail: picks
           ? `${candidates} candidates · ${picks} offered`
           : `${candidates} candidates · none offered${none ? ` — ${none}` : ''}`,

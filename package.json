@@ -17,12 +17,14 @@
     "brief": "node --env-file-if-exists=.env --import tsx src/cli/brief.ts",
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "enrich": "node --env-file-if-exists=.env --import tsx src/cli/enrich.ts"
   },
   "dependencies": {
     "@ai-sdk/google": "^4.0.124",
     "@mastra/core": "^1.85.0",
     "@mastra/libsql": "^1.31.1",
+    "firebase": "^13.4.0",
     "next": "^15.5.4",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",

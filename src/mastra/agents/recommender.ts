@@ -127,10 +127,22 @@ export interface RecommendPromptInput {
   /** True on the widened second pass, where candidates span neighbouring tiers. */
   widened: boolean;
   seedTier: number;
+  /**
+   * 'substitute' replaces a product that is out of stock; 'suggest' offers
+   * something alongside one that is in stock. The two are different sales
+   * conversations and the prompt has to say which one this is.
+   */
+  mode?: 'substitute' | 'suggest';
+  /** Who the customer probably is, when a cluster was decided. */
+  cluster?: { label: string; note: string } | null;
+  /** The picker's reading of this customer, and the sections it chose. */
+  profile?: string | null;
+  sections?: string[];
 }
 
 export function recommendPrompt(input: RecommendPromptInput): string {
   const { categoryPath, seed, candidates, widened, seedTier } = input;
+  const suggest = input.mode === 'suggest';
 
   const framing = widened
     ? `Below are products we DO have in stock, from the same category. Each carries a
@@ -150,20 +162,74 @@ from price.`;
   const list = candidates
     .map(
       (p, i) =>
-        `${String(i + 1).padStart(2)}  ${p.name}  —  ${p.price} kr${widened ? `  —  tier ${p.tier}` : ''}`,
+        `${String(i + 1).padStart(2)}  ${p.name}  —  ${p.price} kr${
+          widened && p.tier !== null && p.tier !== undefined ? `  —  tier ${p.tier}` : ''
+        }`,
     )
     .join('\n');
 
-  return `Category: ${categoryPath}
-
-A customer was looking at this product, but it is out of stock:
+  /**
+   * The seed being in stock turns the standing instructions on their head in
+   * one specific way: there, an empty list is the honest answer when nothing
+   * is the same KIND of product. Here a different kind is often the whole
+   * point — a soundbar beside a television. Said explicitly rather than hoped
+   * for, because the instructions are written for substitution.
+   */
+  const situation = suggest
+    ? `A customer was looking at this product, and we DO have it in stock:
 
   ${seed.name}
   ${seed.price} kr
 
+Nothing needs replacing, so this is not a substitution. The banner is an offer:
+what else would you put in front of this customer, knowing they were looking at
+that.
+
+Three things about this list are different from a substitution, and they
+override the standing instructions where they disagree.
+
+A product of a DIFFERENT KIND is allowed and is often the better
+recommendation. The candidates below were drawn from sections of the shop
+chosen for this customer, so the list deliberately mixes what they were
+looking at with what goes alongside it — a monitor and a mouse beside a
+laptop, a freezer beside a fridge.
+
+Things that go WITH the product now count. The standing rule that an accessory
+is never a substitute holds for replacing a product, not for this: someone
+buying a laptop is well served by a bag or a second screen. A spare part for
+one specific model is still not a recommendation.
+
+The brand is a signal of taste, not a target to match. A list of three products
+from the same brand as the seed is a weak list — the customer has already found
+that brand. Prefer a ranking that gives them more than one kind of answer.
+
+Refuse only if nothing on the list makes sense for this customer at all.`
+    : `A customer was looking at this product, but it is out of stock:
+
+  ${seed.name}
+  ${seed.price} kr`;
+
+  const who = [
+    input.profile ? `Who this customer probably is: ${input.profile}` : null,
+    input.cluster ? `How they tend to buy: ${input.cluster.label}. ${input.cluster.note}` : null,
+    input.sections?.length
+      ? `Sections these candidates were drawn from, in order: ${input.sections.join(', ')}`
+      : null,
+  ].filter(Boolean).join('\n');
+
+  const ask = suggest
+    ? 'Recommend what else to show this customer, ranked best first.'
+    : 'Recommend what to show this customer instead, ranked best first.';
+
+  return `Category: ${categoryPath}
+
+${situation}
+
+${who}
+
 ${framing}
 
-Recommend what to show this customer instead, ranked best first.
+${ask}
 
 Candidates:
 
