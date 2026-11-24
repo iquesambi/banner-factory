@@ -71,15 +71,3 @@ export async function saveReview(
   }
 }
 
-/** Everything this person has judged, newest first. */
-export async function myReviews(uid: string, max = 200): Promise<Review[]> {
-  if (!firebaseConfigured()) return [];
-  const q = query(
-    collection(firebaseDb(), REVIEWS),
-    where('uid', '==', uid),
-    orderBy('createdAt', 'desc'),
-    limit(max),
-  );
-  const snap = await getDocs(q);
-  return snap.docs.map((d) => d.data() as Review);
-}

@@ -139,7 +139,7 @@ Duas coisas que eu já deixaria decididas antes de ligar:
 **O cache de banner muda de preço.** Hoje um banner custa 4 chamadas de texto.
 Com geração de imagem ele custa isso mais uma chamada de imagem, que é uma
 ordem de grandeza mais cara. A chave de cache que está em
-[interface.md](interface.md) passa a valer muito mais.
+a interface passa a valer muito mais.
 
 **Precisa de um portão antes de publicar.** Se o preço é desenhado, alguém ou
 alguma coisa tem que conferir o que foi desenhado. O revisor de marca, que é o

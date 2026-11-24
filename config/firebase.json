@@ -1,0 +1,28 @@
+{
+  "note": [
+    "The Firebase web config for this project, committed on purpose.",
+    "",
+    "This is the public half of Firebase and it is not a secret: it names the",
+    "project and nothing more. Every web app that uses Firebase ships exactly",
+    "these values in its JavaScript bundle, and what protects the data is the",
+    "Security Rules plus Authentication, never the obscurity of this file.",
+    "",
+    "It is here so that whoever clones this repository talks to the same",
+    "project, with the same products and the same accounts, instead of having",
+    "to stand up a Firebase project of their own to see the app work.",
+    "",
+    "The private half — the service-account key that lets a server bypass the",
+    "rules — is NOT here and never will be. See GOOGLE_APPLICATION_CREDENTIALS",
+    "in .env.example.",
+    "",
+    "NEXT_PUBLIC_FIREBASE_* in the environment overrides every value below."
+  ],
+  "config": {
+    "apiKey": "AIzaSyDl3k2TYI2Pu7709Uzc4Ybn_TOFvaTeDyw",
+    "authDomain": "banner-generator-aeef1.firebaseapp.com",
+    "projectId": "banner-generator-aeef1",
+    "storageBucket": "banner-generator-aeef1.firebasestorage.app",
+    "messagingSenderId": "644987043892",
+    "appId": "1:644987043892:web:787ed6b59bde1af53f0a61"
+  }
+}

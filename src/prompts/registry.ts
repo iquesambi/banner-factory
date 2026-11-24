@@ -48,4 +48,3 @@ export const PROMPT_META: Record<PromptId, PromptMeta> = {
   },
 };
 
-export const ALL_PROMPTS: PromptMeta[] = PROMPT_IDS.map((id) => PROMPT_META[id]);

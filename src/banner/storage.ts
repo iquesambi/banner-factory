@@ -30,10 +30,6 @@ export interface UploadResult {
   skipped: string | null;
 }
 
-export function storageAvailable(): boolean {
-  return adminAvailable();
-}
-
 /**
  * Uploads one rendered banner.
  *

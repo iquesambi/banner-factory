@@ -15,6 +15,7 @@ import { existsSync, readFileSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { getAuth } from 'firebase-admin/auth';
 import { adminApp, adminAvailable, adminDb } from './admin.js';
+import { verifiableProjectId, verifyIdToken } from './verify.js';
 import { isRole, type Role } from '../auth/roles.js';
 
 export const PROFILES = 'profiles';
@@ -115,7 +116,12 @@ export const ANONYMOUS: Caller = {
   uid: '', email: null, name: null, role: null, unverified: false,
 };
 
-/** Nobody can be identified at all, because there is no Admin SDK here. */
+/**
+ * Nobody can be identified at all: no service account AND no project to check
+ * a token against. A single-user machine, which is what this is before the
+ * Firebase config exists. Everything is permitted and nothing is attributed,
+ * and the screens say so rather than implying a security that is not there.
+ */
 export const UNVERIFIED: Caller = {
   uid: '', email: null, name: null, role: 'admin', unverified: true,
 };
@@ -128,10 +134,32 @@ export const UNVERIFIED: Caller = {
  * token has no role at all.
  */
 export async function callerFrom(request: Request): Promise<Caller> {
-  if (!adminAvailable()) return UNVERIFIED;
-
   const header = request.headers.get('authorization') ?? '';
   const token = header.startsWith('Bearer ') ? header.slice(7).trim() : '';
+
+  /**
+   * No service account, but a project to check tokens against.
+   *
+   * This is the path whoever clones this repository runs on: the signature is
+   * checked against Google's public certificates, and the role comes from
+   * `config/people.json`. Real identity, real roles, nothing secret needed —
+   * only the storing is lost, so a role handed out on the screen cannot be
+   * saved until somebody adds a service account.
+   */
+  if (!adminAvailable()) {
+    if (!verifiableProjectId()) return UNVERIFIED;
+    if (!token) return ANONYMOUS;
+    const claims = await verifyIdToken(token);
+    if (!claims) return ANONYMOUS;
+    return {
+      uid: claims.uid,
+      email: claims.email,
+      name: claims.name,
+      role: seededRole(claims.email),
+      unverified: false,
+    };
+  }
+
   if (!token) return ANONYMOUS;
 
   let decoded;

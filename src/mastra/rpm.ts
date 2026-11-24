@@ -68,11 +68,6 @@ export function retryPlanFor(error: unknown, attempt: number): RetryPlan | null 
   return null;
 }
 
-/** Kept for callers that only need the number. */
-export function retryDelayFrom(error: unknown, attempt = 0): number | null {
-  return retryPlanFor(error, attempt)?.delayMs ?? null;
-}
-
 export interface RetryOptions {
   attempts?: number;
   /** Called before each wait, for event emission. */

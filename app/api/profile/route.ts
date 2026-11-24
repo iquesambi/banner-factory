@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { adminAvailable, whyUnavailable } from '@/src/firebase/admin.js';
+import { adminAvailable } from '@/src/firebase/admin.js';
+import { verifiableProjectId } from '@/src/firebase/verify.js';
 import { callerFrom, listProfiles, setRole } from '@/src/firebase/profiles.js';
 import { ALL_ROLES, canAssignRoles, isRole, ROLE_META } from '@/src/auth/roles.js';
 
@@ -30,9 +31,16 @@ export async function GET(request: Request) {
     canAssign: mayAssign,
     /** Only an admin or marketing sees the team; the rest see themselves. */
     people: mayAssign && !caller.unverified ? await listProfiles() : [],
+    /**
+     * Three honest states, not two. With a service account everything works;
+     * with only the shipped project config, identity and roles are real but
+     * nothing can be stored; with neither, nobody can be told apart.
+     */
     identity: adminAvailable()
       ? 'verified'
-      : `not verified — ${whyUnavailable()}`,
+      : verifiableProjectId()
+        ? 'verified against Google\u2019s public keys — roles come from config/people.json, and no profile can be stored without a service account'
+        : 'not verified — there is no Firebase project configured',
   });
 }
 

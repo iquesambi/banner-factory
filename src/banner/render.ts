@@ -24,8 +24,45 @@ import type { ArtDirection } from '../mastra/agents/art-director.js';
 
 const run = promisify(execFile);
 
-export const CHROME =
-  process.env.CHROME_PATH ?? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+/**
+ * The browser that takes the screenshot.
+ *
+ * The banner is HTML and CSS, and this is what turns it into a PNG. It was a
+ * single hard-coded macOS path, which worked on exactly one machine: mine.
+ * Anybody else cloning this got `spawn ENOENT` and no banner, with nothing
+ * saying why.
+ *
+ * Any Chromium will do — Chrome, Chromium, Edge, Brave — because all that is
+ * asked of it is `--headless --screenshot`.
+ */
+const CHROME_CANDIDATES = [
+  // macOS
+  '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+  '/Applications/Chromium.app/Contents/MacOS/Chromium',
+  '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge',
+  '/Applications/Brave Browser.app/Contents/MacOS/Brave Browser',
+  // Linux
+  '/usr/bin/google-chrome',
+  '/usr/bin/google-chrome-stable',
+  '/usr/bin/chromium',
+  '/usr/bin/chromium-browser',
+  '/snap/bin/chromium',
+  // Windows
+  'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+  'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+];
+
+export function chromePath(): string {
+  const told = process.env.CHROME_PATH?.trim();
+  if (told) return told;
+  const found = CHROME_CANDIDATES.find((p) => existsSync(p));
+  if (found) return found;
+  throw new Error(
+    'no Chrome found to render the banner with. Install Google Chrome or Chromium, '
+    + 'or set CHROME_PATH to the executable. Looked in: '
+    + CHROME_CANDIDATES.join(', '),
+  );
+}
 
 /**
  * Repo root, so the HTML can point at brand/fonts with absolute file URLs.
@@ -407,7 +444,7 @@ export async function renderBanner(
   const pngPath = `${dir}/${opts.name}.png`;
   writeFileSync(htmlPath, bannerHtml(brief, direction, productFile));
 
-  await run(CHROME, [
+  await run(chromePath(), [
     '--headless',
     '--disable-gpu',
     '--hide-scrollbars',

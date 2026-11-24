@@ -1,172 +1,193 @@
-# Banner Factory Challenge
+# Banner Factory
 
-A coding challenge from Digital Fans.
+Personalised retargeting hero banners for Elgiganten, made on demand from the
+product feed. A visitor looked at a product and left; when they come back, the
+home page hero speaks to them.
 
-Build a small application that generates a personalised retargeting banner for
-an online electronics store, on demand, from real product data and real brand
-material.
+My answer to the [Digital Fans challenge](docs/challenge.md). It picks the
+product, writes the copy, lays out the banner and renders it at 2048 × 768 —
+then measures what it made, tests alternatives against it, and rewrites its own
+agents' instructions from the results.
 
-## Context
+## Run it
 
-Elgiganten (Elkjøp) is the largest consumer electronics retailer in the Nordics.
-The hero banner on its home page is the most valuable space on the site, and
-today every visitor sees the same one.
+**You need:** Node 20+, a Gemini API key, and Google Chrome (or any Chromium).
+The banner is HTML and CSS, and a headless browser turns it into the PNG; the
+usual install paths are found automatically, otherwise set `CHROME_PATH`.
 
-We are working on changing that. A visitor looks at a product, leaves, and
-comes back later. When they return, the home page hero should speak to them,
-based on the product they looked at.
+```bash
+npm install
+cp .env.example .env          # your key goes in GOOGLE_GENERATIVE_AI_API_KEY
+npm run tag                   # build the product store from the feed — free, no model calls
+npm run dev
+```
 
-This challenge is that use case.
+Open <http://localhost:3000>, search for a product, pick a language, press
+**Generate now**. The board shows the run as it happens.
 
-## What we want to prove
+The demo shop — a plain HTML page that shows a banner the way a real site
+would — is at <http://localhost:3000/demo/index.html>.
 
-The point of this demo is to prove two things:
+## Sign in
 
-1. We can select a product and produce a banner **on demand**, customised to
-   the product the visitor looked at and to the promotions running right now.
-2. The banner follows the **basic design principles of the brand**.
+Firebase comes configured: [`config/firebase.json`](config/firebase.json) is in
+the repository, so this clone talks to the same project as mine. Two accounts
+exist for trying the roles:
 
-Do not worry about making the design perfect. We know it can be refined later.
+| Account | Role | Judges |
+|---|---|---|
+| `adm@email.com` | Admin | the product, the words, the layout |
+| `da@email.com` | Art director | the layout only |
 
-## The use case
+The password for both is in the message I sent with this repository.
 
-1. The user picks a **seed product**: the product the visitor looked at.
-2. The user picks a **language** for the banner: Danish, Swedish or English.
-3. The user presses the **Generate banner** button.
-4. The application decides **which product to show**:
-   - the best product currently on promotion for this visitor, or
-   - the seed product itself, as a plain retargeting banner, when nothing on
-     promotion is a good match.
-5. The application generates a **home page hero banner** for that product, in
-   the chosen language, on brand.
+Sign in at `/sign-in` and open `/profile`. On any finished banner the art
+director gets thumbs on **The layout** and a read-only mark on the other two —
+and that is not a screen trick: the token is verified on the server against
+Google's public certificates, so a verdict outside your craft is refused
+however the request is made.
 
-## Requirements
+## How a banner is made
 
-### Must have
+Four stages. Two are code, two are models, and the split is the design: **what
+must be true is computed, what needs judgement is asked.**
 
-- Choose a seed product from the product feed.
-- Choose a language.
-- Generate a retargeting banner from those two inputs.
-- The banner has, at minimum, a **title**, a **subtitle**, a **product image**
-  and a **call to action**. Beyond that, you are free to design it however you
-  like.
-- The banner looks like it belongs on the Elgiganten home page. Use the
-  references in [`examples/`](./examples/) and the live sites,
-  [elgiganten.dk](https://www.elgiganten.dk) and
-  [elgiganten.se](https://www.elgiganten.se). It should feel like the same
-  family. It does not have to be identical.
-- The banner is a home page hero: **2048 × 768 px** (8:3), the size of the
-  production banners.
-- Everything in the banner is true: the product, the price and the saving come
-  from the feed and are never invented.
-- The product shown is **in stock**. The seed product can be any product in the
-  feed, including one that is out of stock; what to show in that case is part of
-  your strategy.
-- Prices are always shown in **DKK**, as they come from the feed, whatever the
-  language. The language changes the text, not the market.
+```
+seed product
+    ├─ 1. CHOOSE ── recommend workflow ───── which product to show
+    ├─ 2. TRUTH ─── facts layer (no model) ─ what may be said at all
+    ├─ 3. WRITE ─── copywriter + strategist  headline, support, button
+    └─ 4. DRAW ──── art director + Chrome ── HTML screenshotted, no image model
+```
 
-### The two sets of examples
+**Choosing** has two modes. Seed out of stock: find the nearest thing actually
+available. Seed in stock: the customer can already buy that, so offer something
+else worth seeing. A free promo shortcut resolves 3.5% of seeds with no model
+call, a brand-derived cluster covers 10.6% more, and only then does a model read
+the customer profile and pick which sections of the shop to draw from.
 
-- [`examples/production-banners/`](./examples/production-banners/) are real
-  banners we took from the Elgiganten websites. They show what runs on the home
-  page today.
-- [`examples/design-references/`](./examples/design-references/) were made by
-  our own team as a direction for personalised banners. Some of what they show,
-  such as subscription prices and legal text, cannot be produced from the feed.
+**The truth layer** is the part I would keep if I threw everything else away. It
+reads only feed values and decides which claims are permitted at all — including
+refusing a saving when the feed contradicts itself, which 56 products here do.
+A number the copywriter invents anyway is caught before the banner is drawn.
 
-The two sets do not agree on everything, and neither do they agree with the
-brand guide: the guide and our references use the diagonal "wing" shape and the
-logo, and the production banners use neither. Both are optional here. Use the
-examples as inspiration and the brand guide for the basics: colour, typography
-and tone of voice.
+**The business policy** is the only place "what should we promote" lives:
+sentences on the Rules screen, dragged into priority order, compiled into a
+prompt by one agent and applied by another. There is no discount threshold in
+the source, because that is the shop's decision and not mine.
 
-### Stack
+## What it does
 
-- **[Mastra](https://mastra.ai)** for the AI side: agents, tools, workflows.
-- **[Next.js](https://nextjs.org)** or **[TanStack Start](https://tanstack.com/start)**
-  for the application.
-- A database is optional.
+**Generation** — search 28,231 products, queue several, three languages (the
+language changes the text, never the market: prices stay in DKK). Live progress
+on the board. Three layouts, chosen by a hash of the SKU, so a product looks the
+same every time and the set looks varied.
 
-### Nice to have
+**Not paying twice** — before anything is spent, the factory looks for a banner
+it already made for this seed or for a top candidate. A stored banner is reused
+only while every fact it prints still holds; a price that moved expires it. When
+reuse was possible and refused, the card says why. Cost per banner is total spend
+over banners delivered, so it falls each time the factory answers without working.
 
-None of these are required. All of them are welcome.
+**Knowing whether it worked** — three verdicts per banner (the product, the
+words, the layout), because each belongs to a different agent. Dragging a card
+back redoes that stage and records a rejection, marked as revealed rather than
+stated. `/measure` shows click rate against the other banners with a p-value and
+refuses to call anything under 500 impressions. A banner that is measurably
+behind gets a UX researcher's variant — one change, one hypothesis — judged with
+Wilson intervals, a two-sided pooled z-test, and a sample size fixed when the
+test opens, so an earlier reading is reported as a peek and not a finding.
 
-- Show a log or progress while the banner is being generated, so the user can
-  follow the process and understand what is happening.
-- Show the cost and the time spent on each banner.
-- Show how banner generation could be optimised, in cost and in time.
-- Anything else you think makes the banner factory better to use. The
-  requirements above are the baseline: you are free to add to them and improve
-  on them.
+**Improving itself** — each agent's baseline instructions live in its source
+file; promoted revisions layer on top and are read at call time. Once enough
+feedback accumulates, a larger model reads the complaints *and the approvals* and
+rewrites the instructions, or declines. A reviewer that never sees either prompt
+compares them on real products, A/B and shuffled. A candidate that does not win
+is rolled back and the window for the next attempt grows. A switch on `/prompts`
+decides whether the reviewer may promote on its own or everything waits for a
+person; a candidate the reviewer refuses never goes live either way.
 
-## Choosing the product
+**People** — five roles: admin, marketing, copywriter, strategist, art director.
+Each judges their own craft; admin and marketing judge everything.
 
-This is the heart of the challenge.
+**Showing it** — a demo shop in plain HTML, and a tag that is two lines on any
+page. It asks which banner to show, records the impression, and reports the click
+with `sendBeacon` so it survives the navigation. No cookie, no identifier,
+nothing about the visitor.
 
-Product recommendation is normally done with ML/DL models trained on
-behavioural data: what people viewed, bought and clicked. We do not have that
-data here. All you have is the product feed.
+## The screens
 
-So we want you to design a selection strategy that tries to answer one question:
-
-> Given the seed product, the one this person visited, what is the best product
-> I can show them on the home page?
-
-The idea is to show something **on promotion** that fits the profile of a person
-who looked at the seed product. Deciding to show the seed product itself is a
-perfectly valid outcome. What matters is that the decision is deliberate and
-that you can explain it.
-
-## What we give you
-
-| Path | What it is |
+| Path | For |
 |---|---|
-| [`brand/Elkjop_Design_Guide_V1_9.4.pdf`](./brand/Elkjop_Design_Guide_V1_9.4.pdf) | The Elkjøp / Elgiganten brand guidelines, 117 pages |
-| [`brand/copywriting-guidelines.md`](./brand/copywriting-guidelines.md) | A short overview of the brand's tone of voice and copy style |
-| [`brand/fonts/`](./brand/fonts/) | The brand fonts, with a ready `fonts.css` |
-| [`brand/logo/`](./brand/logo/) | The Elgiganten logo in navy and white, SVG and PNG |
-| [`data/`](./data/) | A snapshot of the Danish product feed from 2026-08-25, with 28,231 products, and a description of its fields |
-| [`examples/production-banners/`](./examples/production-banners/) | 8 real hero banners taken from elgiganten.dk and elgiganten.se (2048 × 768) |
-| [`examples/design-references/`](./examples/design-references/) | 4 reference banners, one per customer segment, made by our team (1792 × 640) |
+| `/` | Search the feed, queue products, generate |
+| `/board` | One card per banner. Drag a card back to redo a stage |
+| `/board/<id>` | One run in full: the choice and why, the timeline, the cost table, the feedback |
+| `/banners` | Everything made, filtered by language, validity, origin and review |
+| `/rules` | The business rules, written and dragged into order |
+| `/measure` | How each banner performs, and the A/B tests |
+| `/prompts` | The agents' instructions, the evidence, the candidate and its eval |
+| `/profile` | Who you are, what you may judge, who else is on the team |
 
-The feed is real data and it is Danish. It has no category, brand or language
-field. Explore it before you trust it.
+## The command line
 
-## API key and budget
+```bash
+npm run tag                      # build the product store from the feed (free)
+npm run enrich -- --dry          # what the tagger still cannot categorise
+npm run recommend -- 907583      # what the matcher would choose for a SKU
+npm run compose -- 907583        # the copy and badges for a product
+npm run brief -- 907583          # a brief, and a rendered PNG
+npm run improve                  # what each prompt is waiting for
+npm run traffic                  # what has been measured
+npm run publish                  # mirror the product table to Firestore
+```
 
-We will send you a **Gemini API key** directly. It carries a budget of
-**USD 50**.
+`recommend`, `compose` and `brief` print their options when run with no SKU;
+`enrich` and `publish` take `--help`.
 
-- The key is for **your application**: the model calls made while selecting a
-  product and generating a banner. It is not for agentic coding.
-- You are not tied to Gemini. Use any API and any model you like, anywhere in
-  the process. We share this key only so that the challenge does not force you
-  to spend your own money on APIs.
-- Keep the key out of your repository. Load it from an environment variable.
+## Configuration
 
-If you would also like tokens for your coding agent (Codex, Claude Code or
-similar), ask our team.
+| File | Holds |
+|---|---|
+| `.env` | The Gemini API key. Never committed |
+| `config/firebase.json` | The Firebase web config — the public half, the one every web app ships in its bundle |
+| `config/people.json` | Who starts with which role |
+| `.cache/` | Everything the app produces: store, jobs, banners, rules, prompts, traffic. Never committed |
+| `data/` | The feed snapshot and the taxonomy |
 
-## Delivery
+Models are chosen per agent by environment variable — `COPYWRITER_MODEL`,
+`ART_DIRECTOR_MODEL`, `IMPROVER_MODEL` and so on — cheap for the agents that run
+per banner, larger for the three that run rarely and think about the system.
 
-1. Clone this repository and host your copy in a GitHub repository of your own.
-   A fork works too, but it is not required.
-2. Build your solution there.
-3. Include instructions for running it locally: prerequisites, environment
-   variables, and the commands to install and start it.
-4. Send us the link to your repository.
+## What is not built
 
-## Tips
+- **Image generation.** The banner is drawn, not generated. That is a decision:
+  everything on it must be exact, and an image model redraws what you give it —
+  the product becomes a similar product and the price becomes similar-looking
+  digits. The render costs nothing and is identical every time. What a model
+  would buy is a real background instead of a gradient; the prompt for that is
+  specified in [`docs/prompt-imagem.md`](docs/prompt-imagem.md), not wired up.
+- **A brand reviewer agent**, which would check a finished banner against the
+  guide.
+- **The choice stage in the improvement loop.** Replaying a recommendation per
+  eval case costs more than the rest of the loop together, and the rules that
+  drive it are already editable as sentences.
 
-- Start with the problem, not the interface. Build a small dataset of about
-  **25 very different products** and use it to test and define your selection
-  strategy and your banner generation. Once you have a solution that works well
-  for those 25, build the interface and the on-demand flow.
-- Use a component library such as [shadcn/ui](https://ui.shadcn.com) or
-  [HeroUI](https://www.heroui.com).
+## The process
+
+The long version is in [`WORKLOG.md`](WORKLOG.md), the measurements behind it in
+[`docs/detalhes-tecnicos.md`](docs/detalhes-tecnicos.md). Three habits run
+through it: **measure before building** — the pool reaches to the department
+because peripherals turned out to be siblings of a product's parent and not
+children; **ask the model as little as possible** — closed answers by index,
+batching, free shortcuts first, and lazy work, which took the pool needing a
+model call from 28,042 to 15,308; and **write down what was refused** — a reuse
+that was rejected, a saving the feed contradicts, a test that found nothing, a
+prompt revision the reviewer turned down. Most of this system's value is in what
+it declined to do.
 
 ## Use of the material
 
 The brand guide, fonts, logo, banners and feed data belong to Elkjøp /
 Elgiganten. They are provided only for this challenge and may not be used for
-any other purpose.
+any other purpose. The demo shop is marked as a demo on every page for the same
+reason.

@@ -104,15 +104,6 @@ export const policyCompiler = new Agent({
   model: google(POLICY_MODEL),
 });
 
-export const policyCompilerFallback = POLICY_FALLBACK_MODEL
-  ? new Agent({
-      id: 'policy-compiler-fallback',
-      name: 'policy-compiler-fallback',
-      instructions: COMPILER_INSTRUCTIONS,
-      model: google(POLICY_FALLBACK_MODEL),
-    })
-  : null;
-
 export function compilePrompt(rules: string[]): string {
   const list = rules.map((r, i) => `${i + 1}. ${r.trim()}`).join('\n');
   return `These are the business rules, most important first:

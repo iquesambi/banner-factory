@@ -92,12 +92,20 @@ export default function ProfilePage() {
         from outside that craft makes the evidence noisier rather than richer.
       </p>
 
+      {/* Said plainly when roles work but cannot be changed from this screen. */}
+      {!me.unverified && !data.canAssign && data.identity.startsWith('verified against') && (
+        <div className="mb-6 rounded-[11px] border bg-secondary/50 px-4 py-3 text-[12.5px] leading-relaxed text-muted-foreground">
+          This copy runs without a service account, so roles are read from{' '}
+          <code className="font-mono text-[12px]">config/people.json</code> and checked on every
+          request, but they cannot be handed out from here — there is nothing to write them to.
+        </div>
+      )}
+
       {me.unverified && (
         <div className="mb-6 rounded-[11px] border border-amber-300 bg-amber-50 px-4 py-3 text-[12.5px] leading-relaxed text-amber-900">
-          <strong>This server cannot tell anybody apart.</strong> Firebase Admin is not configured
-          here, so no token can be verified and no role can be enforced: everything is allowed and
-          nothing is attributed. Roles start meaning something as soon as the service account is in
-          place — {data.identity}.
+          <strong>This server cannot tell anybody apart.</strong> There is no Firebase project
+          configured here, so no token can be verified and no role can be enforced: everything is
+          allowed and nothing is attributed — {data.identity}.
         </div>
       )}
 

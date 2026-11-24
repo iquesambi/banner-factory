@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { useAuth } from './auth';
 import { firebaseAuth, firebaseConfigured } from './firebase';
 import type { Role, VerdictStage } from '@/src/auth/roles';
@@ -83,18 +83,4 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
 
 export function useProfile(): ProfileState {
   return useContext(Ctx);
-}
-
-/** Whether this person may judge this part of a banner. */
-export function useCanJudge(): (stage: VerdictStage) => boolean {
-  const { me } = useProfile();
-  return useCallback(
-    (stage: VerdictStage) => {
-      if (!me) return false;
-      /** No identity on this machine at all: the screen does not pretend. */
-      if (me.unverified) return true;
-      return me.judges.includes(stage);
-    },
-    [me],
-  );
 }

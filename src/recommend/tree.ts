@@ -72,18 +72,3 @@ export function bandOf(seedCategory: string, nearRoot: string, category: string 
   return 2;
 }
 
-/**
- * How far a product sits from the seed inside that neighbourhood.
- *
- * 0 is the same leaf, 1 a sibling leaf, 2 a leaf one level deeper. Used to
- * prefer the near over the far when a band has to be cut down.
- */
-export function distanceFrom(seedCategory: string, category: string | null): number {
-  if (!category) return 99;
-  if (category === seedCategory) return 0;
-  const a = seedCategory.split('/');
-  const b = category.split('/');
-  let shared = 0;
-  while (shared < a.length && shared < b.length && a[shared] === b[shared]) shared++;
-  return Math.max(a.length, b.length) - shared;
-}

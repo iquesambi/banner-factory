@@ -104,13 +104,3 @@ export function loadTaxonomy(dir = TAXONOMY_DIR): Taxonomy {
   };
 }
 
-/** Ancestor-aware distance, used later by the product matcher. */
-export function categoryDistance(a: string, b: string): number {
-  if (a === b) return 0;
-  const as = a.split('/');
-  const bs = b.split('/');
-  let shared = 0;
-  while (shared < as.length && shared < bs.length && as[shared] === bs[shared]) shared++;
-  if (shared === 0) return Infinity;
-  return as.length - shared + (bs.length - shared);
-}
