@@ -18,6 +18,7 @@ import { REDO_MEANS, type Job, type Verdict, type VerdictStage } from './types.j
 export type { Job } from './types.js';
 
 const JOB_DIR = '.cache/jobs';
+const BANNER_DIR = '.cache/banners';
 
 /** For the one sentence that says which language a reused banner was in. */
 const LANGUAGE_NAME: Record<Language, string> = { da: 'Danish', sv: 'Swedish', en: 'English' };
@@ -46,17 +47,38 @@ interface Runtime {
   loaded: boolean;
   /** One job at a time. The free tier is rate limited, and the board reads better. */
   chain: Promise<void>;
+  /**
+   * Jobs a person stopped, or the watchdog gave up on, while the work was
+   * still in flight. A model call cannot be called back, so the run is let
+   * go rather than killed: it finds its id here at the next stage boundary
+   * and stops writing to a card that has already been closed.
+   */
+  cancelled: Set<string>;
 }
 
 const runtime: Runtime = ((globalThis as { __bannerFactoryJobs?: Runtime }).__bannerFactoryJobs ??= {
   jobs: new Map<string, Job>(),
   loaded: false,
   chain: Promise.resolve(),
+  cancelled: new Set<string>(),
 });
+/** An older runtime object on globalThis may predate this field. */
+runtime.cancelled ??= new Set<string>();
 
 const jobs = runtime.jobs;
 
 function save(job: Job): void {
+  /**
+   * A card that was closed stays closed.
+   *
+   * The stage that was running when somebody pressed stop, or when the
+   * watchdog gave up, carries on to its end and calls this on its way — the
+   * run and the board hold the same object. Without this line the card
+   * reopens itself halfway through, says "writing", and then finishes as if
+   * nothing had been decided.
+   */
+  if (runtime.cancelled.has(job.id)) return;
+  job.touchedAt = new Date().toISOString();
   jobs.set(job.id, job);
   try {
     mkdirSync(JOB_DIR, { recursive: true });
@@ -102,6 +124,8 @@ function normalise(raw: Partial<Job>): Job {
     reuseOptOut: raw.reuseOptOut ?? false,
     verdicts: raw.verdicts ?? {},
     pid: raw.pid ?? null,
+    touchedAt: raw.touchedAt ?? raw.createdAt,
+    published: raw.published ?? false,
     forced: raw.forced ?? null,
     variant: raw.variant ?? null,
   };
@@ -125,6 +149,70 @@ function alive(pid: number | null): boolean {
   } catch {
     return false;
   }
+}
+
+/**
+ * How long one stage may run without finishing.
+ *
+ * The stages are not quick — a model call that hits a rate limit waits 2, 4,
+ * 8 and 16 seconds before it gives up, and the three of them in a row can
+ * fairly take a couple of minutes. Five is well past fair and well short of
+ * a person sitting there wondering.
+ */
+const STAGE_LIMIT_MS = Number(process.env.STAGE_LIMIT_MS ?? 5 * 60_000);
+
+/** The stages where work is actually happening, as opposed to waiting or done. */
+const WORKING = ['choosing', 'writing', 'drawing'];
+const SETTLED = ['ready', 'review', 'failed'];
+
+function giveUp(job: Job, why: string): void {
+  job.stage = 'failed';
+  job.error = job.error ?? why;
+  job.pid = null;
+  /** Written first, closed second, or `save` would refuse its own closing. */
+  save(job);
+  runtime.cancelled.add(job.id);
+}
+
+/**
+ * Closing a card nothing is going to finish.
+ *
+ * Two different deaths. The process that was working on it is gone, which
+ * the pid says outright; or the process is alive and the job has not moved
+ * in a long time, which is the one that used to sit on the board for ever
+ * wearing a spinner. The second is why `touchedAt` exists.
+ *
+ * A queued job is left alone: waiting its turn is not being stuck, and the
+ * stage deadline inside `run` is what stops the queue from being held up by
+ * the job in front.
+ */
+function reap(job: Job): void {
+  if (SETTLED.includes(job.stage)) return;
+  if (!alive(job.pid)) {
+    giveUp(job, 'the server stopped while this was running');
+    return;
+  }
+  if (!WORKING.includes(job.stage)) return;
+  const idle = Date.now() - Date.parse(job.touchedAt ?? job.createdAt);
+  if (idle < STAGE_LIMIT_MS) return;
+  const minutes = Math.round(idle / 60_000);
+  giveUp(job, `stuck in ${job.stage} — nothing happened for ${minutes} minutes`);
+}
+
+/**
+ * Stopping a run by hand.
+ *
+ * The card closes at once, because that is what was asked. What cannot be
+ * done is unmaking the call already on the wire, so the stage finishes into
+ * nothing and `run` drops it at the next boundary. Money already spent stays
+ * on the card: it was spent.
+ */
+export function stopJob(id: string): Job | null {
+  const job = getJob(id);
+  if (!job) return null;
+  if (SETTLED.includes(job.stage)) return job;
+  giveUp(job, 'stopped by hand');
+  return job;
 }
 
 function loadAll(): void {
@@ -159,6 +247,8 @@ function loadAll(): void {
 
 export function listJobs(): Job[] {
   loadAll();
+  /** Cheap at this size, and the board is the place a stuck card is noticed. */
+  for (const job of jobs.values()) reap(job);
   return [...jobs.values()].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 
@@ -190,6 +280,37 @@ export function rateStage(
   if (job.stage === 'review') job.stage = 'ready';
   save(job);
   return job;
+}
+
+/**
+ * The banners that are out in the world, by image.
+ *
+ * Publication belongs to the PICTURE, not to the run that happened to make
+ * it. A banner answered three times from the cache is one banner on one
+ * shelf, and asking which of those three runs was the published one has no
+ * answer worth having.
+ */
+export function publishedImages(): Set<string> {
+  const out = new Set<string>();
+  for (const job of listJobs()) if (job.published && job.png) out.add(job.png);
+  return out;
+}
+
+/**
+ * Putting a banner out, or taking it back.
+ *
+ * Applied to every run that shares the image, so the flag cannot end up
+ * saying two things about one picture.
+ */
+export function setPublished(id: string, value: boolean): Job | null {
+  const job = getJob(id);
+  if (!job || !job.png) return null;
+  for (const other of jobs.values()) {
+    if (other.png !== job.png) continue;
+    other.published = value;
+    save(other);
+  }
+  return getJob(id);
 }
 
 /* ------------------------------------------------------------- the runner */
@@ -659,8 +780,35 @@ async function stageDraw(job: Job, collect: Collect): Promise<void> {
  * `stageChoose` returning false means it answered from an existing banner,
  * so there is nothing left to write or draw.
  */
+/**
+ * One stage, with a deadline.
+ *
+ * The promise that times out is not cancelled — nothing in this stack can
+ * call back a request that is already on the wire. What the deadline buys is
+ * the queue: without it a stage that never returns holds every job behind it
+ * for ever, and the board fills up with cards that will never be looked at.
+ * The abandoned work finishes into a job that has already been closed, and
+ * `run` drops it at the next boundary.
+ */
+function within<T>(what: string, work: Promise<T>): Promise<T> {
+  let timer: NodeJS.Timeout;
+  const limit = new Promise<never>((_, no) => {
+    timer = setTimeout(
+      () => no(new Error(`${what} gave up after ${Math.round(STAGE_LIMIT_MS / 60_000)} minutes`)),
+      STAGE_LIMIT_MS,
+    );
+  });
+  return Promise.race([work, limit]).finally(() => clearTimeout(timer)) as Promise<T>;
+}
+
+/** Did somebody close this card while the stage was running? */
+function stopped(job: Job): boolean {
+  return runtime.cancelled.has(job.id);
+}
+
 async function run(job: Job): Promise<void> {
   const collect = collectorFor(job);
+  runtime.cancelled.delete(job.id);
   /**
    * Whose work this is. Written before anything starts and cleared when it
    * ends, so a module reload can see that the run is alive and leave it be.
@@ -668,16 +816,22 @@ async function run(job: Job): Promise<void> {
   job.pid = process.pid;
   save(job);
   try {
-    const more = job.forced ? stageForced(job) : await stageChoose(job, collect);
-    if (!more) return;
-    await stageWrite(job, collect);
-    await stageDraw(job, collect);
+    const more = job.forced ? stageForced(job) : await within('choosing', stageChoose(job, collect));
+    if (!more || stopped(job)) return;
+    await within('writing', stageWrite(job, collect));
+    if (stopped(job)) return;
+    await within('drawing', stageDraw(job, collect));
   } catch (error) {
     job.stage = 'failed';
     job.error = error instanceof Error ? error.message : String(error);
   } finally {
     job.pid = null;
-    save(job);
+    /**
+     * A card closed by hand keeps the reason it was closed with. Saving the
+     * stage this run reached would put it back on the board as though
+     * nothing had been decided.
+     */
+    if (!stopped(job)) save(job);
   }
 }
 
@@ -718,6 +872,65 @@ export async function deleteJob(id: string): Promise<boolean> {
     /* already gone, which is the state we wanted */
   }
   return true;
+}
+
+/**
+ * Throwing a BANNER away, with everything that points at it.
+ *
+ * Different from deleting a card. A card is one request; a banner is the
+ * image, and several requests can share it after a reuse — deleting one of
+ * them would leave the picture on the shelf with a card missing. This takes
+ * the image, the file beside it, the copy in Cloud Storage, and every job
+ * that answered with it.
+ *
+ * It is a real delete, not an archive, because that is what "delete this
+ * banner" means to the person pressing it. What it cannot delete is the
+ * money already spent on it; that stays visible in the totals, which is
+ * correct.
+ */
+export interface BannerRemoval {
+  png: string;
+  jobs: string[];
+  /** The files taken off the disk beside the PNG: the HTML and the cut-out. */
+  files: number;
+  storage: boolean;
+}
+
+export async function removeBanner(png: string): Promise<BannerRemoval | null> {
+  loadAll();
+  const name = png.split('/').pop() ?? png;
+  /** No path games: a name with a slash in it is not a banner of ours. */
+  if (!name || name.includes('..') || name !== png) return null;
+
+  const owners = [...jobs.values()].filter((j) => j.png === name);
+  if (!owners.length) return null;
+
+  /** One Storage object for the set, so it is deleted once. */
+  const stored = owners.find((j) => j.storage)?.storage ?? null;
+  let storage = false;
+  if (stored) storage = await deleteBanner(stored.path).catch(() => false);
+
+  for (const job of owners) {
+    jobs.delete(job.id);
+    try { rmSync(`${JOB_DIR}/${job.id}.json`); } catch { /* already gone */ }
+  }
+
+  /**
+   * The render leaves three files with the same stem: the PNG, the HTML it
+   * was shot from, and the product cut-out. They are no use without it.
+   */
+  const stem = name.replace(/\.png$/, '');
+  let files = 0;
+  try {
+    for (const f of readdirSync(BANNER_DIR)) {
+      if (f === name || f.startsWith(`${stem}-product.`) || f === `${stem}.html`) {
+        rmSync(`${BANNER_DIR}/${f}`);
+        files++;
+      }
+    }
+  } catch { /* nothing to clean */ }
+
+  return { png: name, jobs: owners.map((j) => j.id), files, storage };
 }
 
 export type RedoStage = 'choosing' | 'writing' | 'drawing';

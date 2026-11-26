@@ -1,5 +1,7 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { basename } from 'node:path';
+import { NextResponse } from 'next/server';
+import { removeBanner } from '@/app/lib/jobs.js';
 
 export const runtime = 'nodejs';
 
@@ -24,4 +26,24 @@ export async function GET(_request: Request, { params }: { params: Promise<{ fil
       'cache-control': 'public, max-age=31536000, immutable',
     },
   });
+}
+
+/**
+ * Throwing a banner away.
+ *
+ * The image, the files it was rendered from, the copy in Cloud Storage and
+ * every run that answered with it — because a banner reused by three
+ * requests is one picture, and deleting a third of it would leave the other
+ * two pointing at nothing.
+ *
+ * A real delete. The screen asks first; this does not ask twice.
+ */
+export async function DELETE(_request: Request, { params }: { params: Promise<{ file: string }> }) {
+  const { file } = await params;
+  const name = basename(file);
+  if (!name.endsWith('.png')) return NextResponse.json({ error: 'not a banner' }, { status: 400 });
+
+  const gone = await removeBanner(name);
+  if (!gone) return NextResponse.json({ error: 'no banner by that name' }, { status: 404 });
+  return NextResponse.json({ deleted: gone });
 }

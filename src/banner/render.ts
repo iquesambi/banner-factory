@@ -21,6 +21,7 @@ import { BEFORE_WORD, SAVE_WORD, type Language } from './facts.js';
 /** Chrome wants the colour without the leading hash. */
 const PALETTE_NAVY_DARK = PALETTE.navyDark.replace('#', '');
 import type { ArtDirection } from '../mastra/agents/art-director.js';
+import { cutOutProduct } from './cutout.js';
 
 const run = promisify(execFile);
 
@@ -169,6 +170,8 @@ export function bannerHtml(
   brief: ArtDirectorBrief,
   direction: ArtDirection,
   productFile: string,
+  /** True when the photograph already carries an alpha channel. */
+  preCut = false,
 ): string {
   const p = brief.design.palette;
   const z = brief.design.zones;
@@ -256,6 +259,17 @@ export function bannerHtml(
   .product canvas, .product img { position:relative; z-index:1;
              max-width:${productW}px; max-height:${productH}px;
              width:auto; height:auto; object-fit:contain; }
+  /*
+     The fallback when the photograph cannot be cut out — a white product on
+     white, where removing the background removes the product with it.
+
+     Shown on a card instead, which is what a shelf does anyway. It reads as
+     a deliberate treatment, where a shredded silhouette reads as a bug, and
+     it is the only honest answer: nothing here knows where that product
+     ends.
+  */
+  .product.tile canvas { background:#fff; border-radius:26px; padding:34px;
+             box-shadow:0 22px 60px rgba(0,0,0,0.38); }
 
 
 
@@ -337,7 +351,13 @@ ${brief.finePrint ? `<div class="fine">${esc(brief.finePrint)}</div>` : ''}
   const x = c.getContext('2d', { willReadFrequently: true });
   x.drawImage(img, 0, 0);
 
-  try {
+  /**
+   * The model already cut this one out, so none of what follows applies:
+   * the photograph arrives with its alpha channel and the canvas keeps it.
+   */
+  const PRE_CUT = ${preCut};
+
+  if (!PRE_CUT) try {
     const d = x.getImageData(0, 0, W, H);
     const px = d.data;
     const light = (i, t) => px[i] >= t && px[i + 1] >= t && px[i + 2] >= t;
@@ -345,17 +365,95 @@ ${brief.finePrint ? `<div class="fine">${esc(brief.finePrint)}</div>` : ''}
     const stack = [];
     for (let i = 0; i < W; i++) stack.push(i, i + (H - 1) * W);
     for (let j = 0; j < H; j++) stack.push(j * W, j * W + W - 1);
+    let bgSum = 0, bgN = 0;
     while (stack.length) {
       const q = stack.pop();
       if (seen[q]) continue;
       const i = q * 4;
       if (!light(i, 232)) continue;
       seen[q] = 1; px[i + 3] = 0;
+      bgSum += (px[i] + px[i + 1] + px[i + 2]) / 3; bgN++;
       const qx = q % W, qy = (q / W) | 0;
       if (qx > 0) stack.push(q - 1);
       if (qx < W - 1) stack.push(q + 1);
       if (qy > 0) stack.push(q - W);
       if (qy < H - 1) stack.push(q + W);
+    }
+    /** The colour the photograph sat on, measured rather than assumed. */
+    const bgMean = bgN > 0 ? bgSum / bgN : 255;
+
+    /**
+     * Did the fill eat the product?
+     *
+     * A white charger photographed on white has no border between the two,
+     * so the fill walks through the product and leaves confetti; a white
+     * security camera gets hollowed out from the inside while its outline
+     * survives. The second case is the nastier one — the silhouette still
+     * looks whole by area, and the product has holes punched through it.
+     *
+     * What catches both is the shape of the boundary. A clean cut-out has a
+     * smooth edge: its length is a small multiple of the square root of its
+     * area. An eaten one is ragged, and the measure explodes. Over a sample
+     * of 22 products the healthy ones scored 0 to 6.3 and the four damaged
+     * ones 13.6, 16.9, 17.2 and 25.1 — no overlap, and nothing in between.
+     *
+     * There is no clever repair available here. The photograph does not say
+     * where the product ends, so the honest move is to stop pretending: show
+     * the picture whole, on a card.
+     */
+    let kept = 0, perimeter = 0;
+    for (let q = 0; q < W * H; q++) if (!seen[q]) kept++;
+    for (let yy = 1; yy < H - 1; yy++) for (let xx = 1; xx < W - 1; xx++) {
+      const q = yy * W + xx;
+      if (seen[q]) continue;
+      if (seen[q - 1] || seen[q + 1] || seen[q - W] || seen[q + W]) perimeter++;
+    }
+    const roughness = perimeter / Math.sqrt(Math.max(kept, 1));
+    /** The second clause is for the degenerate case: a smooth crumb is still a crumb. */
+    const damaged = roughness > 9 || kept / (W * H) < 0.10;
+
+    if (damaged) {
+      /** Put back every pixel the fill took on the way to finding out. */
+      for (let q = 0; q < W * H; q++) if (seen[q]) px[q * 4 + 3] = 255;
+      document.querySelector('.product').classList.add('tile');
+      document.documentElement.dataset.cutout = 'card';
+    } else {
+      /**
+       * Background trapped inside the product — the white seen through the
+       * arch of a headset, or through the loop of a watch strap. The border
+       * fill cannot reach it, so it stays as a bright hole on a navy banner.
+       *
+       * Removing every enclosed light region instead punches holes through
+       * white products: the body of a white iPhone is an enclosed light
+       * region too. What separates them is measurable. Trapped background is
+       * EXACTLY the colour the fill removed and perfectly flat — the headset
+       * reads mean 254.9 against a background of 254.9, deviation 1.1 —
+       * while a white product is darker and textured: the iPhone's body sits
+       * 9 points below its background, a game cover's white patches 2 points
+       * above it with twice the deviation.
+       */
+      const done = new Uint8Array(W * H);
+      for (let s0 = 0; s0 < W * H; s0++) {
+        if (seen[s0] || done[s0] || !light(s0 * 4, 232)) continue;
+        const blob = [s0]; done[s0] = 1;
+        let k = 0, sum = 0, sum2 = 0;
+        while (k < blob.length) {
+          const q = blob[k++]; const i = q * 4;
+          const v = (px[i] + px[i + 1] + px[i + 2]) / 3; sum += v; sum2 += v * v;
+          const qx = q % W, qy = (q / W) | 0;
+          const grow = (n) => { if (!seen[n] && !done[n] && light(n * 4, 232)) { done[n] = 1; blob.push(n); } };
+          if (qx > 0) grow(q - 1);
+          if (qx < W - 1) grow(q + 1);
+          if (qy > 0) grow(q - W);
+          if (qy < H - 1) grow(q + W);
+        }
+        const n = blob.length;
+        if (n < W * H * 0.01) continue;
+        const mean = sum / n;
+        const sd = Math.sqrt(Math.max(sum2 / n - mean * mean, 0));
+        if (Math.abs(mean - bgMean) > 1.5 || sd > 1.8) continue;
+        for (const q of blob) { seen[q] = 1; px[q * 4 + 3] = 0; }
+      }
     }
     /**
      * How dark the product is, over its own pixels only: the transparent
@@ -385,8 +483,8 @@ ${brief.finePrint ? `<div class="fine">${esc(brief.finePrint)}</div>` : ''}
      * A light product has no such contamination to hide, so it keeps the soft
      * fade, which is what stops a hard jagged step on a pale silhouette.
      */
-    const edge = new Uint8Array(seen);
-    for (let yy = 1; yy < H - 1; yy++) for (let xx = 1; xx < W - 1; xx++) {
+    const edge = damaged ? new Uint8Array(W * H) : new Uint8Array(seen);
+    for (let yy = 1; yy < H - 1 && !damaged; yy++) for (let xx = 1; xx < W - 1; xx++) {
       const q = yy * W + xx;
       if (edge[q]) continue;
       const i = q * 4;
@@ -440,9 +538,19 @@ export async function renderBanner(
   const productFile = `${dir}/${opts.name}-product.${ext}`;
   await fetchProduct(brief.product.image, productFile);
 
+  /**
+   * The model cuts the product out before the page is written. When it
+   * declines — no weights, or a mask its own second opinion does not
+   * believe — the page falls back to the colour fill it has always used.
+   */
+  const cut = await cutOutProduct(productFile);
+  if (cut.how === 'mistrusted') {
+    process.stderr.write(`cut-out: falling back to the colour fill (${cut.note})\n`);
+  }
+
   const htmlPath = `${dir}/${opts.name}.html`;
   const pngPath = `${dir}/${opts.name}.png`;
-  writeFileSync(htmlPath, bannerHtml(brief, direction, productFile));
+  writeFileSync(htmlPath, bannerHtml(brief, direction, cut.path ?? productFile, cut.path !== null));
 
   await run(chromePath(), [
     '--headless',

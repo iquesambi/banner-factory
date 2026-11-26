@@ -50,6 +50,19 @@ export default function BoardPage() {
   }
 
   /**
+   * Closing a run that is not going to finish. The card stays — with what it
+   * cost and how far it got — because that is the evidence for why it was
+   * stopped. Throwing it away is the × next to it, and a separate decision.
+   */
+  async function stop(job: Job) {
+    await fetch(`/api/jobs/${job.id}`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ stop: true }),
+    }).catch(() => undefined);
+  }
+
+  /**
    * Polling, not pushing. The workflow already emits every stage and can POST
    * them to a webhook; the design has that landing in Firestore so the client
    * can listen. A one-second poll shows the same thing without standing up
@@ -170,6 +183,7 @@ export default function BoardPage() {
                       busy={redoing === g.primary.id}
                       onPickUp={setHeld}
                       onDelete={remove}
+                      onStop={stop}
                     />
                   ))}
                   {groups.length === 0 && (
@@ -250,12 +264,14 @@ function JobCard({
   busy,
   onPickUp,
   onDelete,
+  onStop,
 }: {
   job: Job;
   alsoFrom: Job[];
   busy: boolean;
   onPickUp: (job: Job | null) => void;
   onDelete: (job: Job) => void;
+  onStop: (job: Job) => void;
 }) {
   const failed = job.stage === 'failed';
   const running = ['choosing', 'writing', 'drawing'].includes(job.stage);
@@ -319,6 +335,16 @@ function JobCard({
             </span>
             {(running || busy) && (
               <span className="text-[11px] text-elgi-navy">{busy ? 'redoing…' : 'running…'}</span>
+            )}
+            {running && !busy && (
+              <button
+                type="button"
+                title="Stop this run"
+                onClick={(e) => { e.preventDefault(); onStop(job); }}
+                className="text-[11px] text-muted-foreground underline underline-offset-2 hover:text-orange-800"
+              >
+                stop
+              </button>
             )}
             {failed && <Badge tone="amber">needs a look</Badge>}
             {job.reuse && <Badge tone="green">reused</Badge>}

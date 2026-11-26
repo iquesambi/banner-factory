@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { deleteJob, getJob, rateStage, redoFrom } from '@/app/lib/jobs.js';
+import { deleteJob, getJob, rateStage, redoFrom, setPublished, stopJob } from '@/app/lib/jobs.js';
 import { VERDICT_STAGES, type VerdictStage } from '@/app/lib/types';
 import { callerFrom } from '@/src/firebase/profiles.js';
 import { canJudge, whyNot } from '@/src/auth/roles.js';
@@ -21,8 +21,19 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const body = (await request.json().catch(() => ({}))) as {
-    stage?: unknown; value?: unknown; by?: unknown;
+    stage?: unknown; value?: unknown; by?: unknown; published?: unknown;
   };
+
+  /**
+   * Putting the banner out, or taking it back. Not a verdict — it says
+   * nothing about whether the banner is good, only whether a visitor may be
+   * shown it — so it takes none of the role checks below.
+   */
+  if (typeof body.published === 'boolean') {
+    const job = setPublished(id, body.published);
+    if (!job) return NextResponse.json({ error: 'no such banner' }, { status: 404 });
+    return NextResponse.json({ job });
+  }
 
   const stage = body.stage as VerdictStage;
   if (!VERDICT_STAGES.includes(stage)) {
@@ -81,7 +92,15 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
  */
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const body = (await request.json().catch(() => ({}))) as { from?: unknown };
+  const body = (await request.json().catch(() => ({}))) as { from?: unknown; stop?: unknown };
+
+  /** Closing a run that is not going to finish. */
+  if (body.stop === true) {
+    const stopped = stopJob(id);
+    if (!stopped) return NextResponse.json({ error: 'no such job' }, { status: 404 });
+    return NextResponse.json({ job: stopped });
+  }
+
   const from = body.from;
   if (from !== 'choosing' && from !== 'writing' && from !== 'drawing') {
     return NextResponse.json({ error: 'expected { from: choosing | writing | drawing }' }, { status: 400 });

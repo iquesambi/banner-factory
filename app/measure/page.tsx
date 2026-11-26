@@ -117,10 +117,11 @@ export default function MeasurePage() {
     <main className="mx-auto max-w-[1180px] px-8 pb-16 pt-5">
       <h1 className="mb-1 text-2xl font-semibold tracking-tight">How the banners are doing</h1>
       <p className="mb-5 max-w-[700px] text-[13.5px] leading-relaxed text-muted-foreground">
-        Each banner is measured against the others: its click rate, and whether the difference is
-        big enough to be worth believing. A banner that is doing well is left alone. One that is
-        measurably behind gets a researcher&rsquo;s attention, and the variant it proposes is
-        tested against the original until there is enough traffic to say which won.
+        Published banners only &mdash; one that exists on this machine and nowhere else has no
+        click rate to read. Each is measured against the others: its click rate, and whether the
+        difference is big enough to be worth believing. A banner that is doing well is left alone.
+        One that is measurably behind gets a researcher&rsquo;s attention, and the variant it
+        proposes is tested against the original until there is enough traffic to say which won.
       </p>
 
       {anySimulated && (
@@ -136,7 +137,7 @@ export default function MeasurePage() {
       {rows === null && <p className="text-sm text-muted-foreground">Loading…</p>}
       {rows?.length === 0 && (
         <div className="rounded-lg border border-dashed p-10 text-center text-sm text-muted-foreground">
-          No banner has been delivered yet, so there is nothing to measure.
+          No banner has been published yet, so there is nothing to measure.
         </div>
       )}
 

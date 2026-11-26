@@ -12,7 +12,7 @@ import {
   performanceOf, saveExperiments, type Change, type Experiment, type Measured, type Performance,
 } from '@/src/experiment/index.js';
 import { pct } from '@/src/experiment/stats.js';
-import { enqueue, getJob, listJobs } from './jobs.js';
+import { enqueue, getJob, listJobs, publishedImages } from './jobs.js';
 import { VERDICT_LABEL, VERDICT_STAGES, type Job } from './types.js';
 
 /**
@@ -41,11 +41,20 @@ export interface Row {
 export function rows(): Row[] {
   const traffic = loadTraffic();
   const book = loadExperiments();
+  const live = publishedImages();
 
   /** One row per banner image, like every other screen: a reuse is not a second banner. */
   const byImage = new Map<string, Job>();
   for (const job of listJobs()) {
     if (!job.png || !job.brief) continue;
+    /**
+     * Only what is published.
+     *
+     * A banner nobody can be shown cannot be clicked, so its click rate is
+     * not a low number — it is no number at all, and a page of those reads
+     * as a page of banners doing badly.
+     */
+    if (!live.has(job.png)) continue;
     /** A variant has a row of its own only through its experiment. */
     if (job.variant) continue;
     const held = byImage.get(job.png);
@@ -117,6 +126,7 @@ export async function propose(jobId: string): Promise<Proposal> {
 
   const traffic = loadTraffic();
   const book = loadExperiments();
+  const live = publishedImages();
   const performance = performanceOf(job.id, traffic);
 
   const past: PastTest[] = book.experiments

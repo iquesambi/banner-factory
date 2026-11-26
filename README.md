@@ -15,6 +15,10 @@ agents' instructions from the results.
 The banner is HTML and CSS, and a headless browser turns it into the PNG; the
 usual install paths are found automatically, otherwise set `CHROME_PATH`.
 
+The first banner also downloads the cut-out model once — 176 MB, into
+`.cache/models`, no key needed. Without it the renderer falls back to the
+colour fill it used before, which is worse on pale products but still works.
+
 ```bash
 npm install
 cp .env.example .env          # your key goes in GOOGLE_GENERATIVE_AI_API_KEY
@@ -58,6 +62,7 @@ seed product
     ├─ 2. TRUTH ─── facts layer (no model) ─ what may be said at all
     ├─ 3. WRITE ─── copywriter + strategist  headline, support, button
     └─ 4. DRAW ──── art director + Chrome ── HTML screenshotted, no image model
+                   + RMBG-1.4 ──────────── the product cut from its photo
 ```
 
 **Choosing** has two modes. Seed out of stock: find the nearest thing actually
@@ -77,6 +82,16 @@ prompt by one agent and applied by another. There is no discount threshold in
 the source, because that is the shop's decision and not mine.
 
 ## What it does
+
+**Cutting the product out** — the feed's photographs sit on white, and white
+pasted on navy reads as a box. A colour fill handles that until the product is
+white too, and then it walks through the product and eats it. A segmentation
+model (RMBG-1.4, on the CPU, half a second) is asked instead. It returns a
+MASK, never pixels: the product on the banner is still the photograph from the
+feed. Its answer is not taken on faith — when the mask covers far less of the
+frame than the non-background area does, the old fill is used instead, which
+catches the two cases in 27 where the model locked onto a screen in a fridge
+door and onto nothing at all.
 
 **Generation** — search 28,231 products, queue several, three languages (the
 language changes the text, never the market: prices stay in DKK). Live progress
@@ -151,7 +166,8 @@ npm run publish                  # mirror the product table to Firestore
 | `.env` | The Gemini API key. Never committed |
 | `config/firebase.json` | The Firebase web config — the public half, the one every web app ships in its bundle |
 | `config/people.json` | Who starts with which role |
-| `.cache/` | Everything the app produces: store, jobs, banners, rules, prompts, traffic. Never committed |
+| `.cache/` | Everything the app produces: store, jobs, banners, cut-outs, rules, prompts, traffic. Never committed |
+| `.cache/models/` | The cut-out model, fetched on first use. `CUTOUT_MODEL` points elsewhere |
 | `data/` | The feed snapshot and the taxonomy |
 
 Models are chosen per agent by environment variable — `COPYWRITER_MODEL`,
@@ -160,7 +176,8 @@ per banner, larger for the three that run rarely and think about the system.
 
 ## What is not built
 
-- **Image generation.** The banner is drawn, not generated. That is a decision:
+- **Image generation.** The banner is drawn, not generated — the one model
+  that touches the picture produces a mask, not pixels. That is a decision:
   everything on it must be exact, and an image model redraws what you give it —
   the product becomes a similar product and the price becomes similar-looking
   digits. The render costs nothing and is identical every time. What a model

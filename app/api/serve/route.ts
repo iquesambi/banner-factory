@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getJob, listJobs } from '@/app/lib/jobs.js';
+import { getJob, listJobs, publishedImages } from '@/app/lib/jobs.js';
 import {
   liveFor, loadExperiments, loadTraffic, record, saveTraffic,
 } from '@/src/experiment/index.js';
@@ -29,12 +29,21 @@ export async function GET(request: Request) {
   const language = url.searchParams.get('lang')?.trim() || 'da';
   if (!sku) return cors(NextResponse.json({ error: 'expected ?sku=' }, { status: 400 }));
 
-  /** The newest delivered banner for this product in this language. */
+  /**
+   * The newest PUBLISHED banner for this product in this language.
+   *
+   * A banner that was made but not published is not refused by accident: it
+   * was never put out, so there is nothing here for a visitor to be shown,
+   * and an impression recorded against it would be a number nobody can see
+   * on the metrics page.
+   */
+  const live = publishedImages();
   const control = listJobs().find(
-    (j) => j.png && j.brief && !j.variant && j.language === language && j.brief.product.sku === sku,
+    (j) => j.png && live.has(j.png) && j.brief && !j.variant
+      && j.language === language && j.brief.product.sku === sku,
   );
   if (!control) {
-    return cors(NextResponse.json({ error: 'no banner for that product yet' }, { status: 404 }));
+    return cors(NextResponse.json({ error: 'no published banner for that product' }, { status: 404 }));
   }
 
   const experiment = liveFor(loadExperiments(), control.id);

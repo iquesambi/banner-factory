@@ -56,6 +56,8 @@ const nextConfig = {
   serverExternalPackages: [
     '@mastra/core', '@mastra/libsql', '@libsql/client', '@ai-sdk/google',
     'firebase-admin', '@google-cloud/firestore', '@grpc/grpc-js',
+    /** Both load native binaries: the ONNX runtime and libvips. */
+    'onnxruntime-node', 'sharp',
   ],
   /** No ESLint config in this project; the build should not invent one. */
   eslint: { ignoreDuringBuilds: true },

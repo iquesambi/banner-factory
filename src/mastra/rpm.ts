@@ -57,8 +57,19 @@ export function retryPlanFor(error: unknown, attempt: number): RetryPlan | null 
     return { kind: 'rate-limit', delayMs: m ? Math.ceil(Number(m[1]) * 1000) + 500 : 20_000 };
   }
 
+  /**
+   * The network not being there is transient too.
+   *
+   * A run died on `getaddrinfo ENOTFOUND generativelanguage.googleapis.com`
+   * — the name resolved again a minute later, so it was a blink of DNS and
+   * nothing more. It was not on this list, so the job failed on the spot and
+   * threw away the stages already paid for. If the host is genuinely wrong
+   * the retries cost half a minute and then fail loudly, which is the right
+   * trade against losing a run to a blink.
+   */
   const transient =
-    /\b50[0234]\b|unavailable|high demand|overloaded|internal error|deadline exceeded|ECONNRESET|ETIMEDOUT|fetch failed/i.test(msg) ||
+    /\b50[0234]\b|unavailable|high demand|overloaded|internal error|deadline exceeded/i.test(msg) ||
+    /ECONNRESET|ETIMEDOUT|ENOTFOUND|EAI_AGAIN|ECONNREFUSED|ENETUNREACH|EHOSTUNREACH|socket hang up|fetch failed|Cannot connect to API/i.test(msg) ||
     (typeof status === 'number' && status >= 500);
   if (transient) {
     const jitter = Math.floor(Math.random() * 600);

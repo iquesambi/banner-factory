@@ -13,8 +13,12 @@ const LINKS = [
   { href: '/board', label: 'Board' },
   { href: '/banners', label: 'Banners' },
   { href: '/rules', label: 'Rules' },
-  { href: '/measure', label: 'Measure' },
-  { href: '/prompts', label: 'Prompts' },
+  /**
+   * The label is not the route. `/measure` is what the folder is called and
+   * what every link in the code says; "Metrics" is what it is called on the
+   * screen. Renaming the folder would churn the API routes for a word.
+   */
+  { href: '/measure', label: 'Metrics' },
 ];
 
 export function Nav() {

@@ -126,6 +126,15 @@ export interface JobCost {
 export interface Job {
   id: string;
   createdAt: string;
+  /**
+   * When anything last changed on this job.
+   *
+   * It is what tells a slow stage from a stuck one. `createdAt` cannot: a
+   * job that has been drawing for an hour and a job that started an hour ago
+   * and is on its third stage look the same from there. Undefined on job
+   * files written before this existed, and read as `createdAt`.
+   */
+  touchedAt?: string;
   stage: Stage;
   language: Language;
   seed: { sku: string; name: string; price: number; stockBand: string; image: string | null };
@@ -150,6 +159,16 @@ export interface Job {
   cost: JobCost;
   /** File name under .cache/banners, served through /api/banners. */
   png: string | null;
+  /**
+   * Whether this banner is out in the world.
+   *
+   * It used to be read off the Cloud Storage upload, which was convenient
+   * and wrong: an upload is a copy being made, not a decision being taken.
+   * Publishing is a decision — it says this is the banner a visitor may be
+   * shown — so it is its own flag, false until somebody says otherwise, and
+   * it is what the demo shop serves and the metrics page measures.
+   */
+  published?: boolean;
   /**
    * The same banner in Cloud Storage, once it was uploaded.
    *

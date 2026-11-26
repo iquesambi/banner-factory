@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { TagStore } from '@/src/store/index.js';
 import type { TaggedProduct } from '@/src/types.js';
-import { listJobs } from '@/app/lib/jobs.js';
+import { listJobs, publishedImages } from '@/app/lib/jobs.js';
 import { cors, preflight } from '@/app/lib/cors.js';
 
 export const runtime = 'nodejs';
@@ -49,14 +49,16 @@ const inStock = (p: TaggedProduct) => {
 };
 
 /**
- * The hero: the newest banner that was actually delivered.
+ * The hero: the newest PUBLISHED banner.
  *
- * The demo has to open on a product that HAS a banner, or the whole page is
- * an empty box. A variant is skipped — which banner of a running test gets
- * shown is decided by the serving endpoint, not here.
+ * The demo has to open on a product whose banner is actually out, or the
+ * page is an empty box with a tag asking for something that will be refused.
+ * A variant is skipped — which banner of a running test gets shown is
+ * decided by the serving endpoint, not here.
  */
 function hero(): { sku: string; language: string } | null {
-  const job = listJobs().find((j) => j.png && j.brief && !j.variant);
+  const live = publishedImages();
+  const job = listJobs().find((j) => j.png && live.has(j.png) && j.brief && !j.variant);
   return job?.brief ? { sku: job.brief.product.sku, language: job.language } : null;
 }
 

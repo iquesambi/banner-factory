@@ -7,6 +7,8 @@ import {
   kr, type Job,
 } from '@/app/lib/types';
 import { amortised } from '@/app/lib/spend';
+import { DeleteBanner } from '@/app/components/delete-banner';
+import { PublishBanner } from '@/app/components/publish-banner';
 
 export const dynamic = 'force-dynamic';
 
@@ -87,8 +89,11 @@ export default async function BannersPage({
    * run that actually drew it, the same way the board does.
    */
   const byImage = new Map<string, Job>();
+  /** How many runs answered with each image, for what a delete will take. */
+  const shareCount = new Map<string, number>();
   for (const job of jobs) {
     if (!job.png || !job.brief) continue;
+    shareCount.set(job.png, (shareCount.get(job.png) ?? 0) + 1);
     const held = byImage.get(job.png);
     if (!held || (held.reuse && !job.reuse)) byImage.set(job.png, job);
   }
@@ -229,6 +234,17 @@ export default async function BannersPage({
                 </p>
               </div>
             </Link>
+            {/*
+              Outside the link: it is an action, not navigation, and a delete
+              inside an anchor is one mis-click from a surprise.
+            */}
+            <div className="flex items-center justify-between gap-2 border-t px-4 py-2">
+              <PublishBanner jobId={job.id} published={Boolean(job.published)} />
+              <DeleteBanner
+                png={job.png as string}
+                alsoFrom={(shareCount.get(job.png as string) ?? 1) - 1}
+              />
+            </div>
           </li>
         ))}
       </ul>

@@ -973,3 +973,181 @@ se quer os endereços no repositório. Numa máquina sem
 Admin SDK configurado o servidor não consegue identificar ninguém: tudo é
 permitido, nada é atribuído, e as telas dizem isso em vez de fingir uma
 segurança que não existe.
+
+## O recorte do produto, medido
+
+As fotos do feed vêm sobre branco, e o recorte era um flood fill a partir da
+borda sobre tudo que fosse claro. Dois defeitos apareceram em banners reais:
+
+- **Carregador branco sobre fundo branco.** O preenchimento atravessava o
+  produto e sobrava confete: 6,4% da imagem, em 88 pedaços.
+- **Câmera branca.** A silhueta sobrevivia inteira, mas o corpo do produto
+  ficava esburacado por dentro — pior, porque *parece* certo pela área.
+
+Medi 22 produtos variados para achar um sinal que separasse os dois casos dos
+recortes sadios. Área e coesão não separam: a câmera tinha 39% e coesão 0,979.
+O que separa é **a rugosidade da borda** — o perímetro dividido pela raiz da
+área:
+
+| | rugosidade |
+|---|---|
+| 18 recortes sadios | 0 a 6,3 |
+| os 4 estragados | 13,6 · 16,9 · 17,2 · 25,1 |
+
+Sem sobreposição e sem nada no meio. Acima de 9, o recorte é descartado e a
+foto aparece inteira sobre um cartão branco — que é o que uma prateleira faz
+de qualquer jeito, e lê como tratamento deliberado em vez de defeito.
+
+O outro lado do problema é o **fundo preso dentro do produto**: o branco visto
+através do arco de um headset, que o preenchimento não alcança. Apagar toda
+região clara fechada fura produtos brancos — o corpo de um iPhone branco
+também é uma região clara fechada. O que separa é medível: fundo preso tem
+exatamente a cor que foi removida e é liso (o headset: média 254,9 contra
+fundo 254,9, desvio 1,1), enquanto um produto branco é mais escuro e
+texturizado (o iPhone fica 9 pontos abaixo do fundo).
+
+## Apagar banner
+
+Na página de banners, um `Delete` por card. Dois cliques, e o segundo diz
+quantas execuções vão junto — um banner reaproveitado por três pedidos é uma
+imagem só, e apagar um terço dele deixaria os outros dois apontando para o
+nada. Vai o PNG, o HTML de origem, o recorte do produto, a cópia no Cloud
+Storage e todos os jobs que responderam com ele.
+
+## O recorte, com modelo
+
+O recorte por cor tinha um limite que nenhum ajuste resolve: quando o produto
+é da mesma cor do papel em que foi fotografado, o preenchimento atravessa o
+produto e come. A medida de rugosidade que entrou antes detecta o estrago,
+mas detectar não é consertar — a saída era mostrar a foto inteira num cartão
+branco, e cartão branco num banner navy é um produto não recortado.
+
+Fui atrás de um modelo. Testei quatro em 27 fotos do feed, todos em ONNX na
+CPU, todos máscara (nunca pixels gerados — o produto no banner continua sendo
+a fotografia do feed):
+
+| modelo | licença | tempo | resultado |
+|---|---|---|---|
+| RMBG-1.4 | não-comercial | 0,5 s | 25 de 27 limpos |
+| BiRefNet lite | MIT | 7 s | come pedaços: moldura de TV, corpo do iPhone |
+| ISNet general | Apache | 0,9 s | halo translúcido em quase tudo |
+| U2Net | Apache | 0,3 s | 320 px, grosseiro demais |
+
+Antes disso perdi um bom tempo medindo errado. O `sharp` devolve a máscara
+redimensionada em três canais e eu lia com passo 1, então toda medida de área
+estava contaminada — cheguei a concluir que os modelos "mantinham a imagem
+inteira" quando o que estava inteiro era o meu bug. Duas outras pistas falsas
+no caminho: achei que a distorção do input (1024×1024 fixo, sem preservar
+aspecto) fosse o problema, e tentei preencher com borda — pior, o modelo lê a
+borda inserida como objeto e devolve o retângulo da foto inteiro.
+
+Sobraram duas falhas reais do RMBG: uma geladeira com tela na porta volta como
+a tela sozinha, e um SSD volta vazio. Ambas têm a mesma forma — o modelo
+agarra uma parte, não o produto. A checagem é uma segunda opinião do método
+antigo: `ink` é a fração da foto que difere da cor do canto, uma estimativa
+grosseira de quanto do quadro não é fundo. Grosseira serve, porque os dois
+números são comparados e não acreditados. Nas 27 fotos a razão máscara/ink
+ficou em 0,57 ou mais nos recortes bons e em 0,14 e 0,00 nos dois ruins. A
+linha está em 0,35, no vazio entre os grupos.
+
+Quando a máscara cai de desconfiança, volta o preenchimento por cor — que é
+exatamente o caso em que ele é bom: produto que se destaca do fundo pela cor.
+O cartão branco continua existindo, como último recurso de quem rodar sem o
+modelo baixado.
+
+Recortes são guardados por hash do conteúdo da foto, então o mesmo produto
+reaproveitado entre idiomas é recortado uma vez só. O custo por banner subiu
+cerca de meio segundo e nenhum centavo: o modelo roda local.
+
+### O cabo
+
+O primeiro corte com modelo ainda saiu errado num caso: o carregador de mesa.
+Corpo e plugue sólidos, e o cabo — dois metros de fio branco fino sobre papel
+branco — virou uma mancha cinza difusa, que em navy lê como sujeira, não como
+fio. Endurecer a mancha não resolve: ela é genuinamente larga, e binarizar
+pinta uma faixa branca onde o cabo não está.
+
+A informação que falta ao modelo está na foto. Um fio não é exatamente a cor
+do papel: tem sombreamento e tem borda. Então os dois respondem perguntas
+diferentes. O modelo diz onde olhar — tudo que ele decide com confiança fica
+como está — e dentro da faixa em que ele hesita quem decide é a cor do pixel:
+três níveis de distância da cor do canto é produto, mais perto que isso é
+papel.
+
+Só isso deixa o fio mordido, tracejado onde ele calha de ser exatamente o
+branco do papel. Um fechamento morfológico (cresce dois pixels, encolhe os
+mesmos dois) costura as mordidas sem engordar nada — crescer e encolher na
+mesma medida devolve uma forma sólida ao próprio contorno. Depois o fundo
+confiante é reimposto, para o fechamento só poder agir dentro da faixa, e uma
+rodada de maioria 3×3 tira o ruído de JPEG que um limiar tão apertado pega.
+Meio pixel de desfoque no fim devolve o antisserrilhado.
+
+Testei três saídas lado a lado: limiar duro (fio mordido), rampa suave sobre
+a distância de cor (fio translúcido e manchado) e o fechamento (fio contínuo).
+O fechamento ganhou sem discussão.
+
+## Matar job parado
+
+Um job ficou preso no meio do caminho. O que existia só cobria metade do
+problema: na carga dos arquivos, um job em estágio de trabalho cujo processo
+tinha morrido era marcado como falho. Isso resolve o servidor que caiu, e não
+resolve o servidor que está vivo com o job travado — que é o caso que fica na
+tela girando para sempre.
+
+Três peças:
+
+**`touchedAt`.** Carimbado em todo `save`. É o que distingue um estágio lento
+de um estágio parado; `createdAt` não distingue, porque um job que está
+desenhando há uma hora e um que começou há uma hora e está no terceiro
+estágio são idênticos daquele ângulo.
+
+**O ceifador**, rodado a cada listagem do board. Processo morto, falha. Vivo e
+sem mexer há cinco minutos, falha dizendo em qual estágio e há quanto tempo.
+Job em `queued` é deixado em paz: esperar a vez não é estar travado.
+
+**Prazo por estágio**, dentro do `run`. É o que de fato destrava a fila — sem
+ele, um estágio que nunca retorna segura todos os jobs atrás dele para sempre,
+e marcar o job como falho não adianta porque a corrente continua presa na
+promessa. A chamada em si não é cancelável, então o trabalho é abandonado, não
+morto, e o `run` o descarta na próxima fronteira de estágio.
+
+Mais um botão "stop" no card rodando, para encerrar à mão sem esperar os cinco
+minutos. O card fica, com o que custou e até onde chegou — é a evidência de
+por que foi parado; jogar fora é o × ao lado, outra decisão.
+
+A armadilha aqui foi o `save`: o estágio abandonado continua vivo e escreve no
+mesmo objeto que o board lê, então o card reabria no meio do caminho dizendo
+"writing". Agora `save` recusa escrever num job que foi fechado.
+
+Verificado com quatro cards sintéticos: travado vira falho com o motivo,
+`queued` fica, recém-mexido fica, órfão de processo morto vira falho, e o stop
+manual fecha um card em andamento sem apagar o motivo de um já fechado. O
+prazo por estágio não foi exercitado contra um estágio real — isso precisa de
+uma corrida paga.
+
+## Só o que está publicado se mede
+
+A página de medição listava todo banner renderizado. Um banner que ninguém
+pode ver não tem taxa de clique baixa — não tem taxa nenhuma, e uma página
+cheia deles lê como uma página de banners indo mal.
+
+A primeira versão leu "publicado" do upload para o Cloud Storage. Era
+conveniente e errado: um upload é uma cópia sendo feita, não uma decisão sendo
+tomada. Publicar diz *este é o banner que um visitante pode ver*, e isso é uma
+decisão — virou um campo próprio, falso até alguém dizer o contrário, com um
+botão no card da página de banners.
+
+A publicação pertence à IMAGEM, não à corrida que a produziu: um banner
+respondido três vezes do cache é um banner só numa prateleira só, e perguntar
+qual das três corridas foi a publicada não tem resposta que sirva. O botão
+marca todas as corridas que compartilham o PNG.
+
+Três lugares passaram a ler isso: a página de métricas, o herói da loja de
+demonstração e o `/api/serve`, que agora recusa um banner não publicado em vez
+de registrar uma impressão que não apareceria em lugar nenhum. O pixel já
+tratava a recusa deixando a caixa vazia.
+
+No menu, "Measure" virou "Metrics" e "Prompts" saiu. Só o rótulo mudou — a
+rota continua `/measure`, porque renomear a pasta mexeria nas rotas de API por
+causa de uma palavra. `/prompts` continua existindo e funcionando para quem
+digitar o endereço.
